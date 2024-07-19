@@ -13,7 +13,7 @@ const query = util.promisify(connection.query).bind(connection);
 //Get All Account Details
 async function getAllAccounts() {
   try {
-    const results = await query("SELECT * FROM accounts;");
+    const results = await query("SELECT * FROM user;");
     return results;
   } catch (error) {
     throw error;
@@ -24,8 +24,8 @@ async function createAccount(newUser) {
   try {
     const encryptedPassword = await bcrypt.hash(newUser.password, saltRounds);
     const sql =
-      "INSERT INTO accounts (username, password, email) VALUES (?,?,?);";
-    const values = [newUser.username, encryptedPassword, newUser.email];
+      "INSERT INTO user (username, password, email, disabled) VALUES (?,?,?,?);";
+    const values = [newUser.username, encryptedPassword, newUser.email, false];
 
     const results = await query(sql, values);
     return results;
@@ -38,7 +38,7 @@ async function createAccount(newUser) {
 async function login(user) {
   try {
     // Query to fetch user data based on username
-    const sql = "SELECT * FROM accounts WHERE username = ?;";
+    const sql = "SELECT * FROM user WHERE username = ?;";
     const results = await query(sql, [user.username]);
 
     if (results.length === 0) {

@@ -1,10 +1,10 @@
 import "./App.css";
-import "./login/Login";
+import PageRoutes from "./routes/PageRoutes";
 
 function App() {
   return (
     <div className="App">
-      <Login />
+      <PageRoutes />
     </div>
   );
 }
