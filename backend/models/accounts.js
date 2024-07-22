@@ -37,8 +37,9 @@ async function createAccount(newUser) {
 //Login
 async function login(user) {
   try {
-    // Query to fetch user data based on username
-    const sql = "SELECT * FROM user WHERE username = ?;";
+    const sql = `
+    SELECT * FROM user WHERE username = ?;
+    `;
     const results = await query(sql, [user.username]);
 
     if (results.length === 0) {
@@ -48,9 +49,18 @@ async function login(user) {
       };
     }
 
-    const encryptedPassword = results[0].password;
+    const userData = results[0];
+
+    // Check if the user is disabled
+    if (userData.disabled) {
+      return {
+        success: false,
+        message: "User account is disabled",
+      };
+    }
 
     // Compare passwords using bcrypt
+    const encryptedPassword = userData.password;
     if (await bcrypt.compare(user.password, encryptedPassword)) {
       // Passwords match, generate access token
       const accessToken = generateAccessToken({ user: user.username });
@@ -64,8 +74,62 @@ async function login(user) {
   }
 }
 
+async function findByUserName(username) {
+  try {
+    console.log(username);
+    const sql = `SELECT userID, groupname
+    FROM usergroup
+    WHERE userID = ?;`;
+    const results = await query(sql, [username]);
+    return results[0];
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function Checkgroup(userid, groupname) {
+  const sql = `
+    SELECT COUNT(*) AS count
+    FROM usergroup
+    WHERE userID = ? AND groupname = ?;
+  `;
+
+  try {
+    const [result] = await query(sql, [userid, groupname]);
+    return result.count > 0; // Return true if the count is greater than 0 (user belongs to group), false otherwise
+  } catch (error) {
+    console.error("Error checking user group:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   getAllAccounts,
   createAccount,
   login,
+  findByUserName,
+  Checkgroup,
 };
+
+//check to convert everythig to lowercase since all data in be shoukd be lowercase
+
+// Passwords match, now check group access
+/*const sqlGroups = "SELECT group_name FROM grouptable;";
+      const groupResults = await query(sqlGroups);
+      const allowedGroups = groupResults.map((row) => row.group_name);
+      let groupAccess = false;
+
+      for (let group of allowedGroups) {
+        if (userData.groupname === group) {
+          groupAccess = true;
+          console.log("I am in " + userData.groupname);
+          break;
+        }
+      }
+
+      if (!groupAccess) {
+        return {
+          success: false,
+          message: "User does not have access to log in",
+        };
+      } */

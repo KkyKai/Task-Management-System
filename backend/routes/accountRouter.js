@@ -6,8 +6,12 @@ const {
   login,
 } = require("../controllers/accountController");
 
+const { isAuthenticatedUser, authorizeRoles } = require("../utils/auth");
+
 // Route to retrieve all account info
-router.route("/getAllAccounts").get(getAllAccounts);
+router
+  .route("/getAllAccounts")
+  .get(isAuthenticatedUser, authorizeRoles("admin"), getAllAccounts);
 
 // Route to create account
 router.route("/createAccount").post(createAccount);

@@ -42,6 +42,9 @@ async function login(req, res) {
       });
 
       console.log(loggedInUser.accessToken);
+      console.log(req.body.username);
+      console.log(req.body.password);
+
       res.json({
         message: `${req.body.username} is logged in!`,
       });
