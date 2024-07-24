@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const { Checkgroup } = require("../models/accounts");
 
 // Middleware to check if user is authenticated
-exports.isAuthenticatedUser = (...groupnames) => {
+/*exports.isAuthenticatedUser = (...groupnames) => {
   return async (req, res, next) => {
     let token;
 
@@ -46,11 +46,12 @@ exports.isAuthenticatedUser = (...groupnames) => {
         .json({ error: "Invalid token, please log in again." });
     }
   };
-};
+}; */
 
 // Middleware to check if user is authenticated
-/*exports.isAuthenticatedUser = (...groupnames) => {
+exports.isAuthenticatedUser = (...groupnames) => {
   return async (req, res, next) => {
+    console.log(req.cookies);
     const token = req.cookies.jwt; // Extract the token from the cookies
 
     if (!token) {
@@ -74,7 +75,7 @@ exports.isAuthenticatedUser = (...groupnames) => {
       next();
     } catch (error) {
       console.error("Authentication/Authorization error:", error);
-      if (error.name === "TokenExpiredError") {
+      if (error.name === "TokenExpiryedError") {
         return res
           .status(401)
           .json({ error: "Token expired, please log in again." });
@@ -84,4 +85,4 @@ exports.isAuthenticatedUser = (...groupnames) => {
         .json({ error: "Invalid token, please log in again." });
     }
   };
-}; */
+};

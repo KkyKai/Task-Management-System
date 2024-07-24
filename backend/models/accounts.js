@@ -78,7 +78,7 @@ async function login(user) {
   }
 }
 
-/*async function findByUserName(username) {
+async function findByUserName(username) {
   try {
     console.log(username);
     const sql = `SELECT groupname
@@ -89,7 +89,7 @@ async function login(user) {
   } catch (error) {
     throw error;
   }
-} */
+}
 
 async function Checkgroup(userid, groupname) {
   const sql = `
@@ -111,7 +111,7 @@ module.exports = {
   getAllAccounts,
   createAccount,
   login,
-  //findByUserName,
+  findByUserName,
   Checkgroup,
 };
 
