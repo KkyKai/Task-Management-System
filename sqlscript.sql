@@ -44,6 +44,8 @@ INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project lead', 'pl1');
 INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project manager', 'pm1'); 
 INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('developer', 'dev1'); 
 
+INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project lead', 'user123'); 
+
 INSERT INTO `usergroup` (`groupname`) VALUES ('admin'); 
 INSERT INTO `usergroup` (`groupname`) VALUES ('project lead'); 
 INSERT INTO `usergroup` (`groupname`) VALUES ('project manager'); 

@@ -1,6 +1,6 @@
 const connection = require("../sqlconnection");
 
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const saltRounds = 10;
 
 const util = require("util");
@@ -59,9 +59,13 @@ async function login(user) {
       };
     }
 
-    // Compare passwords using bcrypt
-    const encryptedPassword = userData.password;
-    if (await bcrypt.compare(user.password, encryptedPassword)) {
+    // Compare passwords using bcryptjs
+    const isPasswordMatch = await bcrypt.compare(
+      user.password,
+      userData.password
+    );
+
+    if (isPasswordMatch) {
       // Passwords match, generate access token
       const accessToken = generateAccessToken({ user: user.username });
       return { success: true, accessToken };
@@ -74,24 +78,24 @@ async function login(user) {
   }
 }
 
-async function findByUserName(username) {
+/*async function findByUserName(username) {
   try {
     console.log(username);
-    const sql = `SELECT userID, groupname
+    const sql = `SELECT groupname
     FROM usergroup
     WHERE userID = ?;`;
     const results = await query(sql, [username]);
-    return results[0];
+    return results[0].groupname; //return groupname as a string
   } catch (error) {
     throw error;
   }
-}
+} */
 
 async function Checkgroup(userid, groupname) {
   const sql = `
     SELECT COUNT(*) AS count
     FROM usergroup
-    WHERE userID = ? AND groupname = ?;
+    WHERE userID = ? AND groupname IN (?);
   `;
 
   try {
@@ -107,7 +111,7 @@ module.exports = {
   getAllAccounts,
   createAccount,
   login,
-  findByUserName,
+  //findByUserName,
   Checkgroup,
 };
 

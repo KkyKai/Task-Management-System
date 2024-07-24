@@ -39,6 +39,8 @@ async function login(req, res) {
         expires: new Date(
           Date.now() + process.env.COOKIE_EXPIRE_TIME * 24 * 60 * 60 * 1000
         ),
+        secure: true, // Ensures the cookie is only sent over HTTPS
+        sameSite: "None", // Ensures the cookie is sent only for same-site requests
       });
 
       console.log(loggedInUser.accessToken);
@@ -58,8 +60,43 @@ async function login(req, res) {
   }
 }
 
+async function checkgroupAdmin(req, res) {
+  try {
+    const checkedUser = await accountModel.Checkgroup(
+      req.cookie("jwt", loggedInUser.accessToken),
+      "admin"
+    );
+  } catch (error) {}
+}
+
+async function logout(req, res) {
+  try {
+    // Clear the JWT cookie
+    res.clearCookie("jwt");
+    res.json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("Error during logout:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+}
+
+async function getUserInfo(req, res) {
+  try {
+    const user = req.user; // `req.user` is set in the `isAuthenticatedUser` middleware
+    res.json({ success: true, user });
+    console.log(req.user);
+  } catch (error) {
+    console.error("Error fetching user info:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+}
+
 module.exports = {
   getAllAccounts,
   createAccount,
   login,
+  logout,
+  getUserInfo,
 };
+
+//credentials: true for cookies

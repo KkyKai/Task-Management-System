@@ -6,6 +6,23 @@ const dotenv = require("dotenv");
 dotenv.config({ path: "./config/config.env" });
 
 const sqlconnection = require("./routes/accountRouter");
+
+const cors = require("cors");
+
+app.use(
+  cors({
+    origin: "http://localhost:3000", // Restrict access to this origin
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Access-Control-Allow-Credentials",
+    ], // Allow only Content-Type header
+    optionsSuccessStatus: 200, // Return status 200 for preflight requests
+    credentials: true, // Allow credentials (cookies)
+  })
+);
+
 app.use(express.json());
 app.use(sqlconnection);
 
