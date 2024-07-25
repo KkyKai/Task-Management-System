@@ -16,7 +16,7 @@ select * from user;
 
 delete from user  where id = 4;
 
-# drop table usergroup;
+# drop table user;
 # drop database nodelogin;
 
 INSERT INTO `usergroup` (`groupname`) VALUES ('admin'); 
@@ -39,17 +39,19 @@ ALTER TABLE `usergroup` AUTO_INCREMENT = 1;
 select * from `usergroup`;
 
 
-INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('admin', 'user123'); 
+INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('admin', 'admin1'); 
 INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project lead', 'pl1'); 
 INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project manager', 'pm1'); 
 INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('developer', 'dev1'); 
 
-INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project lead', 'user123'); 
+INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project lead', 'admin1'); 
 
 INSERT INTO `usergroup` (`groupname`) VALUES ('admin'); 
 INSERT INTO `usergroup` (`groupname`) VALUES ('project lead'); 
 INSERT INTO `usergroup` (`groupname`) VALUES ('project manager'); 
 INSERT INTO `usergroup` (`groupname`) VALUES ('developer'); 
+INSERT INTO `usergroup` (`groupname`) VALUES ('monkey'); 
+INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('monkey', 'pm1'); 
 
 SELECT COUNT(*) AS count FROM usergroup WHERE userID = 'pl1' AND groupname = 'admin';
 
@@ -72,6 +74,26 @@ SELECT userID, groupname
  
      SELECT COUNT(*) AS count
     FROM usergroup
-    WHERE userID = 'dev1' AND groupname = 'developer'
+    WHERE userID = 'dev1' AND groupname = 'developer';
+    
+    
+    SELECT * FROM user join usergroup on user.username = usergroup.userID;
+    
+SELECT u.username, u.email, u.password, u.disabled, GROUP_CONCAT(ug.groupname) AS groupname, GROUP_CONCAT(ug.id) AS id
+FROM user u
+JOIN usergroup ug ON u.username = ug.userID
+GROUP BY u.username;
+
+UPDATE user
+SET email = 'tx@gmail.com', disabled = true
+WHERE username = 'pm1';
+
+UPDATE usergroup
+      SET groupname = 'monkey'
+WHERE userID = 'pm1' and id = 12;
+
+select * from usergroup;
+
+
 
 

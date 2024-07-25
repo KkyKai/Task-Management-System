@@ -14,21 +14,19 @@ function Login() {
     e.preventDefault();
 
     try {
-      await axios.post(
+      const response = await axios.post(
         "http://localhost:8080/login",
         { username, password },
         { withCredentials: true }
       );
 
-      // Fetch user info after login
-      const userInfoResponse = await axios.get(
-        "http://localhost:8080/getUserInfo",
-        { withCredentials: true }
-      );
-
-      dispatch({ type: "LOGIN_SUCCESS", payload: userInfoResponse.data.user });
+      dispatch({
+        type: "LOGIN_SUCCESS",
+        payload: { user: username },
+      });
+      console.log(username);
       setError(null);
-      navigate("/usermanagement");
+      navigate("/landing");
     } catch (error) {
       if (error.response) {
         console.error("Error response:", error.response.data);

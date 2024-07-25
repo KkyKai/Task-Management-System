@@ -13,12 +13,51 @@ const query = util.promisify(connection.query).bind(connection);
 //Get All Account Details
 async function getAllAccounts() {
   try {
-    const results = await query("SELECT * FROM user;");
+    const results = await query(
+      `SELECT u.username, u.email, u.password, u.disabled, GROUP_CONCAT(ug.groupname) AS groupname, GROUP_CONCAT(ug.id) AS id
+      FROM user u
+      JOIN usergroup ug ON u.username = ug.userID
+      GROUP BY u.username;`
+    );
     return results;
   } catch (error) {
     throw error;
   }
 }
+
+//Edit user
+async function editUser(user) {
+  try {
+    const encryptedPassword = await bcrypt.hash(user.password, saltRounds);
+    const results = await query(
+      `UPDATE user
+       SET email = ?, password = ?, disabled = ?
+       WHERE username = ?;`,
+      [user.email, encryptedPassword, user.disabled, user.username]
+    );
+    return results;
+  } catch (error) {
+    console.error("Error editing user:", error);
+    throw error;
+  }
+}
+
+//Edit Group
+async function editGroup(group) {
+  try {
+    const results = await query(
+      `UPDATE usergroup
+      SET groupname = ?
+WHERE userID = ? AND id = ?;`,
+      [group.groupname, group.userID, group.id]
+    );
+    return results;
+  } catch (error) {
+    console.error("Error editing user:", error);
+    throw error;
+  }
+}
+
 //Register User
 async function createAccount(newUser) {
   try {
@@ -78,19 +117,6 @@ async function login(user) {
   }
 }
 
-async function findByUserName(username) {
-  try {
-    console.log(username);
-    const sql = `SELECT groupname
-    FROM usergroup
-    WHERE userID = ?;`;
-    const results = await query(sql, [username]);
-    return results[0].groupname; //return groupname as a string
-  } catch (error) {
-    throw error;
-  }
-}
-
 async function Checkgroup(userid, groupname) {
   const sql = `
     SELECT COUNT(*) AS count
@@ -107,12 +133,26 @@ async function Checkgroup(userid, groupname) {
   }
 }
 
+async function findByUserName(username) {
+  try {
+    const sql = `SELECT groupname FROM usergroup WHERE userID = ?;`;
+    const results = await query(sql, [username]);
+    return results.map((row) => row.groupname); // Return an array of group names
+  } catch (error) {
+    throw error;
+  }
+}
+
+module.exports = { login, findByUserName, Checkgroup };
+
 module.exports = {
   getAllAccounts,
   createAccount,
   login,
   findByUserName,
   Checkgroup,
+  editUser,
+  editGroup,
 };
 
 //check to convert everythig to lowercase since all data in be shoukd be lowercase

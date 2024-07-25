@@ -4,6 +4,7 @@ import Login from "../login/Login";
 import UserManagement from "../admin/UserManagement";
 import { UserProvider } from "../login/UserContext";
 import PrivateRoute from "../login/PrivateRoute";
+import Application from "../Application/Application";
 
 function PageRoutes() {
   return (
@@ -19,6 +20,8 @@ function PageRoutes() {
               </PrivateRoute>
             }
           />
+
+          <Route path="/landing" element={<Application />} />
         </Routes>
       </UserProvider>
     </BrowserRouter>

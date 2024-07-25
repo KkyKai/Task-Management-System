@@ -13,6 +13,22 @@ async function getAllAccounts(req, res) {
   }
 }
 
+//update user
+//get all accounts => /updateUser
+async function updateUser(req, res) {
+  const username = req.params.username; // Extract username from URL
+  const userData = { ...req.body, username }; // Combine username with req.body
+
+  try {
+    const results = await accountModel.editUser(userData);
+    console.log(results);
+    res.json(results);
+  } catch (error) {
+    console.error("Error querying database:", error);
+    res.status(500).send("Error querying database");
+  }
+}
+
 // Register User
 // Register User => /createAccount
 async function createAccount(req, res) {
@@ -27,7 +43,7 @@ async function createAccount(req, res) {
 }
 
 // Login User
-// Register User => /login
+// Login User => /login
 async function login(req, res) {
   try {
     const loggedInUser = await accountModel.login(req.body);
@@ -60,15 +76,6 @@ async function login(req, res) {
   }
 }
 
-async function checkgroupAdmin(req, res) {
-  try {
-    const checkedUser = await accountModel.Checkgroup(
-      req.cookie("jwt", loggedInUser.accessToken),
-      "admin"
-    );
-  } catch (error) {}
-}
-
 async function logout(req, res) {
   try {
     // Clear the JWT cookie
@@ -82,9 +89,10 @@ async function logout(req, res) {
 
 async function getUserInfo(req, res) {
   try {
-    const user = req.user; // `req.user` is set in the `isAuthenticatedUser` middleware
-    res.json({ success: true, user });
     console.log(req.user);
+    const user = req.user;
+    res.json({ success: true, user });
+    console.log("I am " + user);
   } catch (error) {
     console.error("Error fetching user info:", error);
     res.status(500).json({ error: "Internal server error." });
@@ -97,6 +105,7 @@ module.exports = {
   login,
   logout,
   getUserInfo,
+  updateUser,
 };
 
 //credentials: true for cookies

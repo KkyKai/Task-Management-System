@@ -12,7 +12,7 @@ const reducer = produce((draft, action) => {
   switch (action.type) {
     case "LOGIN_SUCCESS":
       draft.isAuthenticated = true;
-      draft.user = action.payload;
+      draft.user = action.payload.user;
       break;
     case "LOGOUT":
       draft.isAuthenticated = false;
