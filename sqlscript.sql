@@ -14,9 +14,11 @@ INSERT INTO `user` (`username`, `password`, `email`, `disabled`) VALUES ('test',
 
 select * from user;
 
-delete from user  where id = 4;
 
-# drop table user;
+delete from usergroup  where id = 15;
+delete from user  where username = 'admin1';
+
+# drop table usergroup;
 # drop database nodelogin;
 
 INSERT INTO `usergroup` (`groupname`) VALUES ('admin'); 
@@ -52,6 +54,7 @@ INSERT INTO `usergroup` (`groupname`) VALUES ('project manager');
 INSERT INTO `usergroup` (`groupname`) VALUES ('developer'); 
 INSERT INTO `usergroup` (`groupname`) VALUES ('monkey'); 
 INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('monkey', 'pm1'); 
+INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project manager', 'dev1'); 
 
 SELECT COUNT(*) AS count FROM usergroup WHERE userID = 'pl1' AND groupname = 'admin';
 
@@ -79,10 +82,10 @@ SELECT userID, groupname
     
     SELECT * FROM user join usergroup on user.username = usergroup.userID;
     
-SELECT u.username, u.email, u.password, u.disabled, GROUP_CONCAT(ug.groupname) AS groupname, GROUP_CONCAT(ug.id) AS id
-FROM user u
-JOIN usergroup ug ON u.username = ug.userID
-GROUP BY u.username;
+	SELECT u.username, u.email, u.password, u.disabled, GROUP_CONCAT(ug.groupname) AS groupname, GROUP_CONCAT(ug.id) AS id
+	FROM user u
+	JOIN usergroup ug ON u.username = ug.userID
+	GROUP BY u.username;
 
 UPDATE user
 SET email = 'tx@gmail.com', disabled = true
@@ -94,6 +97,12 @@ WHERE userID = 'pm1' and id = 12;
 
 select * from usergroup;
 
+      SELECT GROUP_CONCAT(groupname) AS groupname, GROUP_CONCAT(id) AS id, userID
+      FROM usergroup
+      GROUP BY userID;
+      
+      SELECT DISTINCT groupname
+      FROM usergroup
 
 
 

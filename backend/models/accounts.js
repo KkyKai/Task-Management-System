@@ -25,9 +25,22 @@ async function getAllAccounts() {
   }
 }
 
+async function getAllGroups() {
+  try {
+    const results = await query(
+      `SELECT DISTINCT groupname
+      FROM usergroup;`
+    );
+    return results;
+  } catch (error) {
+    throw error;
+  }
+}
+
 //Edit user
 async function editUser(user) {
   try {
+    console.log(user.password);
     const encryptedPassword = await bcrypt.hash(user.password, saltRounds);
     const results = await query(
       `UPDATE user
@@ -48,12 +61,39 @@ async function editGroup(group) {
     const results = await query(
       `UPDATE usergroup
       SET groupname = ?
-WHERE userID = ? AND id = ?;`,
-      [group.groupname, group.userID, group.id]
+WHERE id = ?;`,
+      [group.groupname, group.groupid]
     );
     return results;
   } catch (error) {
     console.error("Error editing user:", error);
+    throw error;
+  }
+}
+
+//remove group
+async function removeGroup(group) {
+  try {
+    const results = await query(`DELETE FROM usergroup where id = ?;`, [
+      group.groupid,
+    ]);
+    return results;
+  } catch (error) {
+    console.error("Error editing user:", error);
+    throw error;
+  }
+}
+
+async function addGroups(group) {
+  try {
+    const results = await query(
+      "INSERT INTO usergroup (groupname, userID) VALUES (?, ?);",
+      [group.groupname, group.username]
+    );
+    console.log(results);
+    return results;
+  } catch (error) {
+    console.error("Error adding group:", error);
     throw error;
   }
 }
@@ -147,12 +187,15 @@ module.exports = { login, findByUserName, Checkgroup };
 
 module.exports = {
   getAllAccounts,
+  getAllGroups,
   createAccount,
   login,
   findByUserName,
   Checkgroup,
   editUser,
   editGroup,
+  removeGroup,
+  addGroups,
 };
 
 //check to convert everythig to lowercase since all data in be shoukd be lowercase

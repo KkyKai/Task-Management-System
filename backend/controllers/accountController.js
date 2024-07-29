@@ -13,11 +13,24 @@ async function getAllAccounts(req, res) {
   }
 }
 
+async function getAllGroups(req, res) {
+  try {
+    const results = await accountModel.getAllGroups();
+    console.log(results);
+    res.json(results);
+  } catch (error) {
+    console.error("Error querying database:", error);
+    res.status(500).send("Error querying database");
+  }
+}
+
 //update user
 //get all accounts => /updateUser
 async function updateUser(req, res) {
   const username = req.params.username; // Extract username from URL
   const userData = { ...req.body, username }; // Combine username with req.body
+
+  console.log(userData);
 
   try {
     const results = await accountModel.editUser(userData);
@@ -26,6 +39,49 @@ async function updateUser(req, res) {
   } catch (error) {
     console.error("Error querying database:", error);
     res.status(500).send("Error querying database");
+  }
+}
+
+//update group
+//Update Group => /updateUser
+async function updateGroup(req, res) {
+  const groupid = req.params.id; // Extract username from URL
+  const groupData = { ...req.body, groupid }; // Combine username with req.body
+  console.log(groupData);
+
+  try {
+    const results = await accountModel.editGroup(groupData);
+    console.log(results);
+    res.json(results);
+  } catch (error) {
+    console.error("Error querying database:", error);
+    res.status(500).send("Error querying database");
+  }
+}
+
+async function removeGroup(req, res) {
+  const groupid = req.params.id; // Extract username from URL
+  const groupData = { groupid }; // Combine username with req.body
+  console.log(groupData);
+
+  try {
+    const results = await accountModel.removeGroup(groupData);
+    console.log(results);
+    res.json(results);
+  } catch (error) {
+    console.error("Error querying database:", error);
+    res.status(500).send("Error querying database");
+  }
+}
+
+async function addGroup(req, res) {
+  try {
+    const results = await accountModel.addGroups(req.body);
+    console.log(req.body);
+    res.json(results);
+  } catch (error) {
+    console.error("Error sending to database:", error);
+    res.status(500).send("Error sending to database");
   }
 }
 
@@ -106,6 +162,10 @@ module.exports = {
   logout,
   getUserInfo,
   updateUser,
+  updateGroup,
+  getAllGroups,
+  removeGroup,
+  addGroup,
 };
 
 //credentials: true for cookies

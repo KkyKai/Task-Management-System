@@ -3,12 +3,14 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../login/UserContext";
 import Navbar from "../util/Navbar";
+import MultiSelectDropdown from "./MultiSelectDropdown";
 
 const UserManagement = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const { state } = useContext(UserContext); // Access the global state
+  const [groups, setGroups] = useState([]);
+  const { state } = useContext(UserContext);
   const navigate = useNavigate();
 
   const [editIndex, setEditIndex] = useState(-1);
@@ -18,6 +20,7 @@ const UserManagement = () => {
     password: "",
     groupname: [],
     disabled: false,
+    id: "",
   });
 
   useEffect(() => {
@@ -28,17 +31,26 @@ const UserManagement = () => {
 
     const fetchData = async () => {
       try {
-        const response = await axios.get(
+        const accountsResponse = await axios.get(
           "http://localhost:8080/getAllAccounts",
-          {
-            withCredentials: true, // Ensure cookies are sent with the request
-          }
+          { withCredentials: true }
         );
-        setAccounts(response.data);
+        setAccounts(accountsResponse.data);
+
+        const groupsResponse = await axios.get(
+          "http://localhost:8080/getAllGroups",
+          { withCredentials: true }
+        );
+        setGroups(groupsResponse.data.map((group) => group.groupname));
+        console.log(accounts);
+
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching accounts:", error);
-        setError("Not Authorised to view page");
+        console.error(
+          "Error fetching data:",
+          error.response ? error.response.data : error.message
+        );
+        setError("Error fetching data. Check the console.");
         setLoading(false);
       }
     };
@@ -51,20 +63,26 @@ const UserManagement = () => {
 
   const handleEdit = (index) => {
     const accountToEdit = accounts[index];
+    console.log(accountToEdit);
     setEditIndex(index);
     setEditValues({
       username: accountToEdit.username,
       email: accountToEdit.email,
       password: "",
-      groupname: accountToEdit.groupname.split(","), // Split groupname if it's stored as a comma-separated string
+      groupname: Array.isArray(accountToEdit.groupname)
+        ? accountToEdit.groupname
+        : (accountToEdit.groupname || "")
+            .split(",")
+            .map((group) => group.trim()),
       disabled: accountToEdit.disabled,
+      id: accountToEdit.id,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Make API call to update user using editValues
+      // Update user details
       await axios.put(
         `http://localhost:8080/updateUser/${editValues.username}`,
         {
@@ -74,33 +92,59 @@ const UserManagement = () => {
         }
       );
 
-      await axios.put(
-        `http://localhost:8080/updateGroup/${editValues.groupname}`,
-        {
-          groupname: editValues.groupname.join(","),
-          userID: editValues.username,
-          id: editValues.id.join(","),
-        }
+      // Get existing groups for comparison
+      const account = accounts.find(
+        (acc) => acc.username === editValues.username
       );
-      // Assuming the API updates successfully, update accounts state
+      const existingGroups = Array.isArray(account.groupname)
+        ? account.groupname
+        : account.groupname.split(",");
+      const updatedGroups = editValues.groupname;
+
+      // Determine groups to be added, removed, or updated
+      const groupsToAdd = updatedGroups.filter(
+        (group) => !existingGroups.includes(group)
+      );
+      const groupsToRemove = existingGroups.filter(
+        (group) => !updatedGroups.includes(group)
+      );
+
+      // Update groups
+      if (groupsToAdd.length > 0) {
+        for (const group of groupsToAdd) {
+          await axios.post("http://localhost:8080/addGroup", {
+            groupname: group,
+            username: editValues.username,
+          });
+        }
+      }
+
+      // Send individual DELETE requests for each group to remove
+      if (groupsToRemove.length > 0) {
+        for (const group of groupsToRemove) {
+          // Extract ID based on group name
+          const groupId = account.id.split(",")[existingGroups.indexOf(group)];
+          await axios.delete(`http://localhost:8080/removeGroup/${groupId}`);
+        }
+      }
+
+      // Update the state with the new account details
       const updatedAccounts = accounts.map((account, index) =>
         index === editIndex ? { ...account, ...editValues } : account
       );
       setAccounts(updatedAccounts);
-      setEditIndex(-1); // Reset editIndex after successful update
+      setEditIndex(-1);
     } catch (error) {
       console.error("Error updating user:", error);
-      // Handle error state as needed
     }
   };
 
   const cancelEdit = () => {
-    setEditIndex(-1); // Reset editIndex to cancel editing
+    setEditIndex(-1);
   };
 
   const handleCreateUser = async () => {
     try {
-      // Make API call to create user using form data
       const newUser = {
         username: editValues.username,
         email: editValues.email,
@@ -111,14 +155,19 @@ const UserManagement = () => {
       const response = await axios.post(
         "http://localhost:8080/createUser",
         newUser,
-        { withCredentials: true } // Ensure cookies are sent with the request
+        { withCredentials: true }
       );
       console.log("User created successfully:", response.data);
-      // Handle success state or update UI as needed
     } catch (error) {
       console.error("Error creating user:", error);
-      // Handle error state as needed
     }
+  };
+
+  const handleGroupChange = (selectedGroups) => {
+    setEditValues({
+      ...editValues,
+      groupname: selectedGroups,
+    });
   };
 
   return (
@@ -127,31 +176,6 @@ const UserManagement = () => {
 
       <div className="w-full max-w-6xl bg-white p-6 rounded-lg shadow-lg">
         <h1 className="text-2xl font-bold mb-4 text-center">User Management</h1>
-        <div className="mb-4">
-          <label
-            htmlFor="group-name"
-            className="block text-gray-700 font-bold mb-2"
-          >
-            Enter Group Name:
-          </label>
-          <div className="flex mb-4">
-            <input
-              type="text"
-              id="group-name"
-              className="flex-grow p-2 border border-gray-300 rounded-l-lg"
-              placeholder="Group Name"
-            />
-            <button
-              className="bg-blue-500 text-white p-2 rounded-r-lg"
-              onClick={() => {
-                //const groupName = document.getElementById("group-name").value;
-                //handleCreateGroup(groupName);
-              }}
-            >
-              + Create Group
-            </button>
-          </div>
-        </div>
         <div className="overflow-x-auto mb-4">
           <table className="min-w-full bg-white">
             <thead className="bg-gray-200">
@@ -169,6 +193,7 @@ const UserManagement = () => {
                 <tr key={index}>
                   <td className="py-2 px-4 border">{account.username}</td>
                   <td className="py-2 px-4 border">{account.email}</td>
+
                   <td className="py-2 px-4 border">
                     {editIndex === index ? (
                       <input
@@ -188,21 +213,19 @@ const UserManagement = () => {
                   </td>
                   <td className="py-2 px-4 border">
                     {editIndex === index ? (
-                      <input
-                        type="text"
-                        value={editValues.groupname.join(",")}
-                        onChange={(e) =>
-                          setEditValues({
-                            ...editValues,
-                            groupname: e.target.value.split(","),
-                          })
-                        }
-                        className="p-2 border border-gray-300 rounded"
+                      <MultiSelectDropdown
+                        options={groups}
+                        selectedOptions={editValues.groupname}
+                        onChange={handleGroupChange}
                       />
                     ) : (
-                      account.groupname
+                      (String(account.groupname) || "")
+                        .split(",")
+                        .map((group) => group.trim())
+                        .join(", ")
                     )}
                   </td>
+
                   <td className="py-2 px-4 border">
                     {editIndex === index ? (
                       <select
@@ -259,24 +282,45 @@ const UserManagement = () => {
             <input
               type="text"
               placeholder="Username"
+              value={editValues.username}
+              onChange={(e) =>
+                setEditValues({ ...editValues, username: e.target.value })
+              }
               className="p-2 border border-gray-300 rounded"
             />
             <input
               type="text"
               placeholder="Email"
+              value={editValues.email}
+              onChange={(e) =>
+                setEditValues({ ...editValues, email: e.target.value })
+              }
               className="p-2 border border-gray-300 rounded mx-2"
             />
             <input
               type="password"
               placeholder="Password"
+              value={editValues.password}
+              onChange={(e) =>
+                setEditValues({ ...editValues, password: e.target.value })
+              }
               className="p-2 border border-gray-300 rounded mx-2"
             />
-            <select className="p-2 border border-gray-300 rounded mx-2">
-              <option>DevTeam</option>
-              <option>Admins</option>
-              <option>Leads</option>
-            </select>
-            <select className="p-2 border border-gray-300 rounded mx-2">
+            <MultiSelectDropdown
+              options={groups}
+              selectedOptions={editValues.groupname}
+              onChange={handleGroupChange}
+            />
+            <select
+              value={editValues.disabled ? "Disabled" : "Enabled"}
+              onChange={(e) =>
+                setEditValues({
+                  ...editValues,
+                  disabled: e.target.value === "Disabled",
+                })
+              }
+              className="p-2 border border-gray-300 rounded mx-2"
+            >
               <option>Enabled</option>
               <option>Disabled</option>
             </select>
