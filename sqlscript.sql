@@ -19,6 +19,7 @@ delete from usergroup  where id = 15;
 delete from user  where username = 'admin1';
 
 # drop table usergroup;
+# drop table user;
 # drop database nodelogin;
 
 INSERT INTO `usergroup` (`groupname`) VALUES ('admin'); 
@@ -41,18 +42,20 @@ ALTER TABLE `usergroup` AUTO_INCREMENT = 1;
 select * from `usergroup`;
 
 
-INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('admin', 'admin1'); 
+INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('admin', 'admin'); 
 INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project lead', 'pl1'); 
 INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project manager', 'pm1'); 
 INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('developer', 'dev1'); 
 
-INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project lead', 'admin1'); 
+INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project lead', 'dev1'); 
 
 INSERT INTO `usergroup` (`groupname`) VALUES ('admin'); 
 INSERT INTO `usergroup` (`groupname`) VALUES ('project lead'); 
 INSERT INTO `usergroup` (`groupname`) VALUES ('project manager'); 
 INSERT INTO `usergroup` (`groupname`) VALUES ('developer'); 
 INSERT INTO `usergroup` (`groupname`) VALUES ('monkey'); 
+INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('monkey', 'pm1'); 
+INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('monkey', 'pm1'); 
 INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('monkey', 'pm1'); 
 INSERT INTO `usergroup` (`groupname`, `userID`) VALUES ('project manager', 'dev1'); 
 
@@ -97,12 +100,29 @@ WHERE userID = 'pm1' and id = 12;
 
 select * from usergroup;
 
+SET SQL_SAFE_UPDATES = 0;
+DELETE FROM usergroup
+WHERE groupname = 'monkey';
+SET SQL_SAFE_UPDATES = 1;
+
+
       SELECT GROUP_CONCAT(groupname) AS groupname, GROUP_CONCAT(id) AS id, userID
       FROM usergroup
       GROUP BY userID;
       
       SELECT DISTINCT groupname
       FROM usergroup
+
+delete from `usergroup` where userID = 'pm1' and groupname = 'admin';
+
+SELECT u.username, GROUP_CONCAT(ug.groupname ORDER BY ug.groupname ASC) AS groupnames
+FROM user u
+JOIN usergroup ug ON u.username = ug.userID
+GROUP BY u.username;
+
+select groupname from usergroup where userID = 'dev1';
+
+SELECT email FROM user WHERE username = 'dev1';
 
 
 

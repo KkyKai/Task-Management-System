@@ -43,8 +43,8 @@ const MultiSelectDropdown = ({ options, selectedOptions, onChange }) => {
   }, [inputValue]);
 
   return (
-    <div className="w-full md:w-1/2 flex flex-col items-center h-64 mx-auto relative">
-      <div className="w-full px-4" ref={dropdownRef}>
+    <div className="w-full flex flex-col items-center relative">
+      <div className="w-full" ref={dropdownRef}>
         <div className="flex flex-col items-center relative">
           <div className="w-full">
             <div className="my-2 p-1 flex border border-gray-200 bg-white rounded">

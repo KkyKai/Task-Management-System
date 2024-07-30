@@ -11,6 +11,7 @@ const UserManagement = () => {
   const [error, setError] = useState("");
   const [groups, setGroups] = useState([]);
   const { state } = useContext(UserContext);
+  const [newGroup, setNewGroup] = useState("");
   const navigate = useNavigate();
 
   const [editIndex, setEditIndex] = useState(-1);
@@ -20,7 +21,14 @@ const UserManagement = () => {
     password: "",
     groupname: [],
     disabled: false,
-    id: "",
+  });
+
+  const [newUser, setNewUser] = useState({
+    username: "",
+    email: "",
+    password: "",
+    groupname: [],
+    disabled: false,
   });
 
   useEffect(() => {
@@ -35,14 +43,36 @@ const UserManagement = () => {
           "http://localhost:8080/getAllAccounts",
           { withCredentials: true }
         );
-        setAccounts(accountsResponse.data);
+        const allAccounts = accountsResponse.data;
+
+        const groupRequests = allAccounts.map((account) =>
+          axios.get(
+            `http://localhost:8080/getGroupbyUsers/${account.username}`,
+            {
+              withCredentials: true,
+            }
+          )
+        );
+
+        const groupsResponses = await Promise.all(groupRequests);
+
+        const accountsWithGroups = allAccounts.map((account, index) => {
+          const groupsForUser = groupsResponses[index].data.map(
+            (g) => g.groupname
+          );
+          return {
+            ...account,
+            groupname: groupsForUser,
+          };
+        });
+
+        setAccounts(accountsWithGroups);
 
         const groupsResponse = await axios.get(
           "http://localhost:8080/getAllGroups",
           { withCredentials: true }
         );
         setGroups(groupsResponse.data.map((group) => group.groupname));
-        console.log(accounts);
 
         setLoading(false);
       } catch (error) {
@@ -63,45 +93,35 @@ const UserManagement = () => {
 
   const handleEdit = (index) => {
     const accountToEdit = accounts[index];
-    console.log(accountToEdit);
     setEditIndex(index);
     setEditValues({
       username: accountToEdit.username,
       email: accountToEdit.email,
-      password: "",
-      groupname: Array.isArray(accountToEdit.groupname)
-        ? accountToEdit.groupname
-        : (accountToEdit.groupname || "")
-            .split(",")
-            .map((group) => group.trim()),
+      password: accountToEdit.password,
+      groupname: accountToEdit.groupname || [],
       disabled: accountToEdit.disabled,
-      id: accountToEdit.id,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Update user details
       await axios.put(
         `http://localhost:8080/updateUser/${editValues.username}`,
         {
           email: editValues.email,
           password: editValues.password,
           disabled: editValues.disabled,
-        }
+        },
+        { withCredentials: true }
       );
 
-      // Get existing groups for comparison
       const account = accounts.find(
         (acc) => acc.username === editValues.username
       );
-      const existingGroups = Array.isArray(account.groupname)
-        ? account.groupname
-        : account.groupname.split(",");
+      const existingGroups = account.groupname || [];
       const updatedGroups = editValues.groupname;
 
-      // Determine groups to be added, removed, or updated
       const groupsToAdd = updatedGroups.filter(
         (group) => !existingGroups.includes(group)
       );
@@ -109,26 +129,31 @@ const UserManagement = () => {
         (group) => !updatedGroups.includes(group)
       );
 
-      // Update groups
       if (groupsToAdd.length > 0) {
         for (const group of groupsToAdd) {
-          await axios.post("http://localhost:8080/addGroup", {
-            groupname: group,
-            username: editValues.username,
-          });
+          await axios.post(
+            "http://localhost:8080/addGroup",
+            {
+              groupname: group,
+              username: editValues.username,
+            },
+            { withCredentials: true }
+          );
         }
       }
 
-      // Send individual DELETE requests for each group to remove
       if (groupsToRemove.length > 0) {
         for (const group of groupsToRemove) {
-          // Extract ID based on group name
-          const groupId = account.id.split(",")[existingGroups.indexOf(group)];
-          await axios.delete(`http://localhost:8080/removeGroup/${groupId}`);
+          await axios.delete(
+            `http://localhost:8080/removeGroup`,
+            {
+              data: { groupname: group, userID: editValues.username },
+            },
+            { withCredentials: true }
+          );
         }
       }
 
-      // Update the state with the new account details
       const updatedAccounts = accounts.map((account, index) =>
         index === editIndex ? { ...account, ...editValues } : account
       );
@@ -145,21 +170,76 @@ const UserManagement = () => {
 
   const handleCreateUser = async () => {
     try {
-      const newUser = {
-        username: editValues.username,
-        email: editValues.email,
-        password: editValues.password,
-        groupname: editValues.groupname.join(","),
-        disabled: editValues.disabled,
+      // Convert disabled state to boolean
+      const isDisabled = newUser.disabled === "Disabled";
+      // Construct the new user details
+      const newUserDetails = {
+        username: newUser.username,
+        email: newUser.email,
+        password: newUser.password,
+        groupname: newUser.groupname.join(","),
+        disabled: isDisabled,
       };
+
+      console.log(newUserDetails);
+
+      // Send a POST request to create the new user
       const response = await axios.post(
-        "http://localhost:8080/createUser",
-        newUser,
+        "http://localhost:8080/createAccount",
+        newUserDetails,
         { withCredentials: true }
       );
+
       console.log("User created successfully:", response.data);
+
+      // Add the new user to the accounts state
+      setAccounts([
+        ...accounts,
+        {
+          ...newUserDetails,
+          groupname: newUser.groupname,
+        },
+      ]);
+
+      for (const group of newUser.groupname) {
+        await axios.post(
+          "http://localhost:8080/addGroup",
+          {
+            groupname: group,
+            username: newUser.username,
+          },
+          { withCredentials: true }
+        );
+      }
+
+      // Reset the newUser state
+      setNewUser({
+        username: "",
+        email: "",
+        password: "",
+        groupname: [],
+        disabled: false,
+      });
     } catch (error) {
       console.error("Error creating user:", error);
+    }
+  };
+
+  const handleCreateGroup = async () => {
+    try {
+      await axios.post(
+        "http://localhost:8080/addGroup",
+        { groupname: newGroup, username: null },
+        { withCredentials: true }
+      );
+
+      // Update the groups state to include the new group
+      setGroups((prevGroups) => [...prevGroups, newGroup]);
+
+      // Reset the new group state to reduce typing
+      setNewGroup("");
+    } catch (error) {
+      console.error("Error creating group:", error);
     }
   };
 
@@ -170,13 +250,38 @@ const UserManagement = () => {
     });
   };
 
+  const handleNewUserGroupChange = (selectedGroups) => {
+    setNewUser({
+      ...newUser,
+      groupname: selectedGroups,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center">
       <Navbar />
 
       <div className="w-full max-w-6xl bg-white p-6 rounded-lg shadow-lg">
         <h1 className="text-2xl font-bold mb-4 text-center">User Management</h1>
+
         <div className="overflow-x-auto mb-4">
+          {/* New Group Creation Section */}
+          <div className="flex justify-center mb-4">
+            <input
+              type="text"
+              placeholder="New Group"
+              value={newGroup}
+              onChange={(e) => setNewGroup(e.target.value)}
+              className="p-2 border border-gray-300 rounded"
+            />
+            <button
+              className="bg-blue-500 text-white p-2 rounded ml-2"
+              onClick={handleCreateGroup}
+            >
+              Create Group
+            </button>
+          </div>
+
           <table className="min-w-full bg-white">
             <thead className="bg-gray-200">
               <tr>
@@ -192,7 +297,24 @@ const UserManagement = () => {
               {accounts.map((account, index) => (
                 <tr key={index}>
                   <td className="py-2 px-4 border">{account.username}</td>
-                  <td className="py-2 px-4 border">{account.email}</td>
+
+                  <td className="py-2 px-4 border">
+                    {editIndex === index ? (
+                      <input
+                        type="text"
+                        value={editValues.email}
+                        onChange={(e) =>
+                          setEditValues({
+                            ...editValues,
+                            email: e.target.value,
+                          })
+                        }
+                        className="p-2 border border-gray-300 rounded"
+                      />
+                    ) : (
+                      `${account.email}`
+                    )}
+                  </td>
 
                   <td className="py-2 px-4 border">
                     {editIndex === index ? (
@@ -282,48 +404,50 @@ const UserManagement = () => {
             <input
               type="text"
               placeholder="Username"
-              value={editValues.username}
+              value={newUser.username}
               onChange={(e) =>
-                setEditValues({ ...editValues, username: e.target.value })
+                setNewUser({ ...newUser, username: e.target.value })
               }
               className="p-2 border border-gray-300 rounded"
             />
             <input
               type="text"
               placeholder="Email"
-              value={editValues.email}
+              value={newUser.email}
               onChange={(e) =>
-                setEditValues({ ...editValues, email: e.target.value })
+                setNewUser({ ...newUser, email: e.target.value })
               }
               className="p-2 border border-gray-300 rounded mx-2"
             />
             <input
               type="password"
               placeholder="Password"
-              value={editValues.password}
+              value={newUser.password}
               onChange={(e) =>
-                setEditValues({ ...editValues, password: e.target.value })
+                setNewUser({ ...newUser, password: e.target.value })
               }
               className="p-2 border border-gray-300 rounded mx-2"
             />
             <MultiSelectDropdown
               options={groups}
-              selectedOptions={editValues.groupname}
-              onChange={handleGroupChange}
+              selectedOptions={newUser.groupname}
+              onChange={handleNewUserGroupChange}
             />
+
             <select
-              value={editValues.disabled ? "Disabled" : "Enabled"}
+              value={newUser.disabled ? "Disabled" : "Enabled"}
               onChange={(e) =>
-                setEditValues({
-                  ...editValues,
-                  disabled: e.target.value === "Disabled",
+                setNewUser({
+                  ...newUser,
+                  disabled: e.target.value,
                 })
               }
-              className="p-2 border border-gray-300 rounded mx-2"
+              className="p-2 px-4 border border-gray-300 rounded mx-2 w-64"
             >
               <option>Enabled</option>
               <option>Disabled</option>
             </select>
+
             <button
               className="bg-green-500 text-white p-2 rounded ml-2"
               onClick={handleCreateUser}

@@ -11,7 +11,7 @@ const generateAccessToken = require("../utils/generateAccessToken.js");
 const query = util.promisify(connection.query).bind(connection);
 
 //Get All Account Details
-async function getAllAccounts() {
+/*async function getAllAccounts() {
   try {
     const results = await query(
       `SELECT u.username, u.email, u.password, u.disabled, GROUP_CONCAT(ug.groupname) AS groupname, GROUP_CONCAT(ug.id) AS id
@@ -23,7 +23,45 @@ async function getAllAccounts() {
   } catch (error) {
     throw error;
   }
+} */
+
+async function getAllAccounts() {
+  try {
+    const results = await query(
+      `SELECT username, email, password, disabled
+        FROM user;`
+    );
+    return results;
+  } catch (error) {
+    throw error;
+  }
 }
+
+async function getGroupbyUser(username) {
+  try {
+    console.log(username);
+    const results = await query(
+      `SELECT distinct groupname FROM usergroup WHERE userID = ?;`,
+      [username]
+    );
+    return results;
+  } catch (error) {
+    throw error;
+  }
+}
+
+/*async function tagGrouptoUser(username) {
+  try {
+    console.log(username);
+    const results = await query(
+      `SELECT distinct groupname FROM usergroup WHERE userID = ?;`,
+      [username]
+    );
+    return results;
+  } catch (error) {
+    throw error;
+  }
+} */
 
 async function getAllGroups() {
   try {
@@ -72,11 +110,13 @@ WHERE id = ?;`,
 }
 
 //remove group
-async function removeGroup(group) {
+async function removeGroups(group) {
   try {
-    const results = await query(`DELETE FROM usergroup where id = ?;`, [
-      group.groupid,
-    ]);
+    const results = await query(
+      `DELETE FROM usergroup where groupname = ? AND userID = ?`,
+      [group.groupname, group.userID]
+    );
+
     return results;
   } catch (error) {
     console.error("Error editing user:", error);
@@ -86,6 +126,16 @@ async function removeGroup(group) {
 
 async function addGroups(group) {
   try {
+    // Check if the groupname already exists
+    const [existingGroup] = await query(
+      "SELECT * FROM usergroup WHERE groupname = ?;",
+      [group.groupname]
+    );
+
+    if (existingGroup) {
+      throw new Error("Groupname already exists.");
+    }
+
     const results = await query(
       "INSERT INTO usergroup (groupname, userID) VALUES (?, ?);",
       [group.groupname, group.username]
@@ -104,7 +154,24 @@ async function createAccount(newUser) {
     const encryptedPassword = await bcrypt.hash(newUser.password, saltRounds);
     const sql =
       "INSERT INTO user (username, password, email, disabled) VALUES (?,?,?,?);";
-    const values = [newUser.username, encryptedPassword, newUser.email, false];
+    const values = [
+      newUser.username,
+      encryptedPassword,
+      newUser.email,
+      newUser.disabled,
+    ];
+
+    const results = await query(sql, values);
+    return results;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function insertUserGroup(newUser) {
+  try {
+    const sql = "INSERT INTO usergroup (groupname, userID) VALUES (?,?);";
+    const values = [newUser.groupname, newUser.username];
 
     const results = await query(sql, values);
     return results;
@@ -183,6 +250,34 @@ async function findByUserName(username) {
   }
 }
 
+async function selectByUser(username) {
+  try {
+    const sql = `SELECT email FROM user WHERE username = ?;`;
+    const results = await query(sql, [username]);
+    return results[0];
+  } catch (error) {
+    throw error;
+  }
+}
+
+//Edit user
+async function editByUser(user) {
+  try {
+    console.log(user.password);
+    const encryptedPassword = await bcrypt.hash(user.password, saltRounds);
+    const results = await query(
+      `UPDATE user
+       SET email = ?, password = ?
+       WHERE username = ?;`,
+      [user.email, encryptedPassword, user.username]
+    );
+    return results;
+  } catch (error) {
+    console.error("Error editing user:", error);
+    throw error;
+  }
+}
+
 module.exports = { login, findByUserName, Checkgroup };
 
 module.exports = {
@@ -194,8 +289,12 @@ module.exports = {
   Checkgroup,
   editUser,
   editGroup,
-  removeGroup,
+  removeGroups,
   addGroups,
+  insertUserGroup,
+  getGroupbyUser,
+  selectByUser,
+  editByUser,
 };
 
 //check to convert everythig to lowercase since all data in be shoukd be lowercase

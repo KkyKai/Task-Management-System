@@ -11,7 +11,7 @@ const Navbar = () => {
         <Link to="/" className="text-gray-700 hover:text-blue-500">
           Home
         </Link>
-        <Link to="/landing" className="text-gray-700 hover:text-blue-500">
+        <Link to="/profile" className="text-gray-700 hover:text-blue-500">
           Profile
         </Link>
         {state.isAuthenticated && (

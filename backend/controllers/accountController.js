@@ -24,6 +24,18 @@ async function getAllGroups(req, res) {
   }
 }
 
+async function getGroupbyUsers(req, res) {
+  console.log(req.params.username);
+  try {
+    const results = await accountModel.getGroupbyUser(req.params.username);
+    console.log(results);
+    res.json(results);
+  } catch (error) {
+    console.error("Error querying database:", error);
+    res.status(500).send("Error querying database");
+  }
+}
+
 //update user
 //get all accounts => /updateUser
 async function updateUser(req, res) {
@@ -60,12 +72,11 @@ async function updateGroup(req, res) {
 }
 
 async function removeGroup(req, res) {
-  const groupid = req.params.id; // Extract username from URL
-  const groupData = { groupid }; // Combine username with req.body
+  const groupData = req.body; // Combine username with req.body
   console.log(groupData);
 
   try {
-    const results = await accountModel.removeGroup(groupData);
+    const results = await accountModel.removeGroups(groupData);
     console.log(results);
     res.json(results);
   } catch (error) {
@@ -90,6 +101,17 @@ async function addGroup(req, res) {
 async function createAccount(req, res) {
   try {
     const results = await accountModel.createAccount(req.body);
+    console.log(results);
+    res.json(results);
+  } catch (error) {
+    console.error("Error sending to database:", error);
+    res.status(500).send("Error sending to database");
+  }
+}
+
+async function createUserGroup(req, res) {
+  try {
+    const results = await accountModel.insertUserGroup(req.body);
     console.log(results);
     res.json(results);
   } catch (error) {
@@ -155,6 +177,36 @@ async function getUserInfo(req, res) {
   }
 }
 
+async function selectByUsers(req, res) {
+  console.log(req.params.user);
+  try {
+    const results = await accountModel.selectByUser(req.params.user);
+    console.log(results);
+    res.json(results);
+  } catch (error) {
+    console.error("Error querying database:", error);
+    res.status(500).send("Error querying database");
+  }
+}
+
+async function updateSelectedUser(req, res) {
+  const username = req.params.username; // Extract username from URL
+  const userData = { ...req.body, username }; // Combine username with req.body
+
+  console.log("userData " + userData);
+
+  console.log("req body " + username);
+
+  try {
+    const results = await accountModel.editByUser(userData);
+    console.log(results);
+    res.json(results);
+  } catch (error) {
+    console.error("Error querying database:", error);
+    res.status(500).send("Error querying database");
+  }
+}
+
 module.exports = {
   getAllAccounts,
   createAccount,
@@ -166,6 +218,10 @@ module.exports = {
   getAllGroups,
   removeGroup,
   addGroup,
+  createUserGroup,
+  getGroupbyUsers,
+  selectByUsers,
+  updateSelectedUser,
 };
 
 //credentials: true for cookies
