@@ -6,7 +6,8 @@ const express = require('express');
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: 'root',
+  //password: 'root',
+password: 'kaiyang123',
   database: 'nodelogin'
 });
 

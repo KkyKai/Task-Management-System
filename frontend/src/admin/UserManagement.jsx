@@ -5,6 +5,8 @@ import { UserContext } from "../login/UserContext";
 import Navbar from "../util/Navbar";
 import MultiSelectDropdown from "./MultiSelectDropdown";
 
+//axios.defaults.withCredentials = true;
+
 const UserManagement = () => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +99,7 @@ const UserManagement = () => {
     setEditValues({
       username: accountToEdit.username,
       email: accountToEdit.email,
-      password: accountToEdit.password,
+      password: "",
       groupname: accountToEdit.groupname || [],
       disabled: accountToEdit.disabled,
     });
@@ -132,7 +134,7 @@ const UserManagement = () => {
       if (groupsToAdd.length > 0) {
         for (const group of groupsToAdd) {
           await axios.post(
-            "http://localhost:8080/addGroup",
+            "http://localhost:8080/createUserGroup",
             {
               groupname: group,
               username: editValues.username,
@@ -148,8 +150,9 @@ const UserManagement = () => {
             `http://localhost:8080/removeGroup`,
             {
               data: { groupname: group, userID: editValues.username },
-            },
-            { withCredentials: true }
+              withCredentials: true
+            }
+  
           );
         }
       }
@@ -203,7 +206,7 @@ const UserManagement = () => {
 
       for (const group of newUser.groupname) {
         await axios.post(
-          "http://localhost:8080/addGroup",
+          "http://localhost:8080/createUserGroup",
           {
             groupname: group,
             username: newUser.username,
