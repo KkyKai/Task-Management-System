@@ -274,7 +274,7 @@ async function login(user, ipAddress, browserType) {
   } catch (error) {
     throw error;
   }
-}
+} 
 
 async function Checkgroup(userid, groupname) {
   const sql = `
@@ -345,7 +345,7 @@ module.exports = {
   //getAllAccounts,
   //getAllGroups,
   //createAccount,
-  //login,
+  login,
   //findByUserName,
   Checkgroup,
   //editUser,

@@ -129,6 +129,30 @@ const generateAccessToken = require("../utils/generateAccessToken.js");
       res.status(500).send("Unexpected error");
     }
   }
+
+  async function getUserStatus(req, res) {
+    const username = req.params.username;
+    console.log(username);
+    
+    try {
+      connection.query(
+        `SELECT disabled FROM user WHERE username = ?;`,
+        [username],
+        (error, results) => {
+          if (error) {
+            console.error("Error querying database:", error);
+            res.status(500).send("Error querying database");
+          } else {
+            console.log(results[0]);
+            res.json(results[0]);
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      res.status(500).send("Unexpected error");
+    }
+  }
   
 
 //update group
@@ -410,6 +434,7 @@ const generateAccessToken = require("../utils/generateAccessToken.js");
       }
   
       const userData = results[0];
+      console.log(username);
   
       // Check if the user is disabled
       if (userData.disabled) {
@@ -426,7 +451,7 @@ const generateAccessToken = require("../utils/generateAccessToken.js");
           ip: ipAddress,
           browser: browserType,
         };
-        const accessToken = generateAccessToken(payload);
+        const accessToken = generateAccessToken({payload});
   
         // Set the access token in a cookie
         res.cookie("jwt", accessToken, {
@@ -439,7 +464,6 @@ const generateAccessToken = require("../utils/generateAccessToken.js");
         console.log(accessToken);
         res.json({ message: `${username} is logged in!` });
       } else {
-        // Passwords do not match
         res.clearCookie("jwt");
         res.status(401).json({ error: "Incorrect password" });
       }
@@ -599,6 +623,7 @@ module.exports = {
   getGroupbyUsers,
   selectByUsers,
   updateSelectedUser,
+  getUserStatus
 };
 
 //credentials: true for cookies

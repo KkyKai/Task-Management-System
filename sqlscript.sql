@@ -16,7 +16,7 @@ select * from user;
 
 
 delete from usergroup  where id = 15;
-delete from user  where username = '';
+delete from user  where username = 'admin1';
 
 # drop table usergroup;
 # drop table user;
@@ -28,7 +28,7 @@ INSERT INTO `usergroup` (`groupname`) VALUES ('project manager');
 INSERT INTO `usergroup` (`groupname`) VALUES ('developer'); 
 
 
-select * from `user`;
+select email from `user` where username = 'toxc' AND email = '';
 
 CREATE TABLE IF NOT EXISTS `usergroup` (
 `id` int NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -122,7 +122,7 @@ GROUP BY u.username;
 
 select groupname from usergroup where userID = 'dev1';
 
-SELECT email FROM user WHERE username = 'admin';
+SELECT email FROM user WHERE username = 'dev1';
 
 
 

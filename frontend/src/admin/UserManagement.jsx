@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-//import { UserContext } from "../login/UserContext";
+import { UserContext } from "../login/UserContext";
 import Navbar from "../util/Navbar";
 import MultiSelectDropdown from "./MultiSelectDropdown";
 
@@ -12,7 +12,7 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [groups, setGroups] = useState([]);
-  //const { state } = useContext(UserContext);
+  const { state } = useContext(UserContext);
   const [newGroup, setNewGroup] = useState("");
   const navigate = useNavigate();
 
@@ -33,57 +33,82 @@ const UserManagement = () => {
     disabled: false,
   });
 
+  const [userStatus, setUserStatus] = useState(false);
+
   useEffect(() => {
-    const fetchData = async () => {
+    const checkUserStatus = async () => {
       try {
-        const accountsResponse = await axios.get(
-          "http://localhost:8080/getAllAccounts",
+        const response = await axios.get(
+          `http://localhost:8080/getUserStatus/${state.user}`,
           { withCredentials: true }
         );
-        const allAccounts = accountsResponse.data;
+        const status = response.data.disabled;
+        console.log("status " + status);
+        setUserStatus(status);
 
-        const groupRequests = allAccounts.map((account) =>
-          axios.get(
-            `http://localhost:8080/getGroupbyUsers/${account.username}`,
-            {
-              withCredentials: true,
-            }
-          )
-        );
-
-        const groupsResponses = await Promise.all(groupRequests);
-
-        const accountsWithGroups = allAccounts.map((account, index) => {
-          const groupsForUser = groupsResponses[index].data.map(
-            (g) => g.groupname
-          );
-          return {
-            ...account,
-            groupname: groupsForUser,
-          };
-        });
-
-        setAccounts(accountsWithGroups);
-
-        const groupsResponse = await axios.get(
-          "http://localhost:8080/getAllGroups",
-          { withCredentials: true }
-        );
-        setGroups(groupsResponse.data.map((group) => group.groupname));
-
-        setLoading(false);
+        if (status) {
+          // Log out the user and redirect to login
+          await axios.post("http://localhost:8080/logout", {}, { withCredentials: true });
+          navigate("/");
+        } else {
+          fetchData(); // Fetch data if user is enabled
+        }
       } catch (error) {
-        console.error(
-          "Error fetching data:",
-          error.response ? error.response.data : error.message
-        );
-        setError("Error fetching data. Check the console.");
-        setLoading(false);
+        console.error("Error checking user status:", error);
+        setError("Error checking user status.");
       }
     };
 
-    fetchData();
-  }, []);
+    checkUserStatus();
+  }, [state.user, navigate]);
+
+  const fetchData = async () => {
+    try {
+      const accountsResponse = await axios.get(
+        "http://localhost:8080/getAllAccounts",
+        { withCredentials: true }
+      );
+      const allAccounts = accountsResponse.data;
+
+      const groupRequests = allAccounts.map((account) =>
+        axios.get(
+          `http://localhost:8080/getGroupbyUsers/${account.username}`,
+          {
+            withCredentials: true,
+          }
+        )
+      );
+
+      const groupsResponses = await Promise.all(groupRequests);
+
+      const accountsWithGroups = allAccounts.map((account, index) => {
+        const groupsForUser = groupsResponses[index].data.map(
+          (g) => g.groupname
+        );
+        return {
+          ...account,
+          groupname: groupsForUser,
+        };
+      });
+
+      setAccounts(accountsWithGroups);
+
+      const groupsResponse = await axios.get(
+        "http://localhost:8080/getAllGroups",
+        { withCredentials: true }
+      );
+      setGroups(groupsResponse.data.map((group) => group.groupname));
+
+      setLoading(false);
+    } catch (error) {
+      console.error(
+        "Error fetching data:",
+        error.response ? error.response.data : error.message
+      );
+      setError("Error fetching data. Check the console.");
+      setLoading(false);
+    }
+  };
 
   if (loading) return <div>Loading... due to fetch</div>;
   if (error) return <div>{error}</div>;
@@ -141,7 +166,7 @@ const UserManagement = () => {
 
       if (groupsToRemove.length > 0) {
         for (const group of groupsToRemove) {
-          await axios.delete(`http://localhost:8080/removeGroup`, {
+          await axios.delete("http://localhost:8080/removeGroup", {
             data: { groupname: group, userID: editValues.username },
             withCredentials: true,
           });
@@ -250,7 +275,6 @@ const UserManagement = () => {
       groupname: selectedGroups,
     });
   };
-
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center">
       <Navbar />

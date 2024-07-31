@@ -15,6 +15,7 @@ const {
   getGroupbyUsers,
   selectByUsers,
   updateSelectedUser,
+  getUserStatus
 } = require("../controllers/accountController");
 
 const { findByUserName, Checkgroup } = require("../models/accounts");
@@ -100,5 +101,7 @@ router.get("/check-auth", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Internal server error." });
   }
 });
+
+router.route("/getUserStatus/:username").get(authenticateToken, getUserStatus);
 
 module.exports = router;

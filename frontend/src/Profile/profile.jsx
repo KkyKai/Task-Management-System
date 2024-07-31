@@ -29,8 +29,9 @@ const Profile = () => {
             withCredentials: true,
           }
         );
+        console.log(response.data[0].email);
         setUserProfile({
-          email: response.data.email || "",
+          email: response.data[0].email || "",
           password: "",
         });
       } catch (error) {
