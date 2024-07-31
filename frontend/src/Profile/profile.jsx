@@ -56,10 +56,16 @@ const Profile = () => {
       setStatusMessage("Profile updated successfully");
     } catch (error) {
       console.error("Failed to update profile", error);
-  
+
       // Set status message based on the error response
-      if (error.response && error.response.data && error.response.data.message) {
-        setStatusMessage(`Failed to update profile: ${error.response.data.message}`);
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setStatusMessage(
+          `Failed to update profile: ${error.response.data.message}`
+        );
       } else {
         setStatusMessage("Failed to update profile. Please try again.");
       }

@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { UserContext } from "../login/UserContext";
+//import { UserContext } from "../login/UserContext";
 import Navbar from "../util/Navbar";
 import MultiSelectDropdown from "./MultiSelectDropdown";
 
@@ -12,7 +12,7 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [groups, setGroups] = useState([]);
-  const { state } = useContext(UserContext);
+  //const { state } = useContext(UserContext);
   const [newGroup, setNewGroup] = useState("");
   const navigate = useNavigate();
 
@@ -34,11 +34,6 @@ const UserManagement = () => {
   });
 
   useEffect(() => {
-    if (!state.isAuthenticated) {
-      navigate("/");
-      return;
-    }
-
     const fetchData = async () => {
       try {
         const accountsResponse = await axios.get(
@@ -88,9 +83,9 @@ const UserManagement = () => {
     };
 
     fetchData();
-  }, [state.isAuthenticated, navigate]);
+  }, []);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div>Loading... due to fetch</div>;
   if (error) return <div>{error}</div>;
 
   const handleEdit = (index) => {
@@ -146,14 +141,10 @@ const UserManagement = () => {
 
       if (groupsToRemove.length > 0) {
         for (const group of groupsToRemove) {
-          await axios.delete(
-            `http://localhost:8080/removeGroup`,
-            {
-              data: { groupname: group, userID: editValues.username },
-              withCredentials: true
-            }
-  
-          );
+          await axios.delete(`http://localhost:8080/removeGroup`, {
+            data: { groupname: group, userID: editValues.username },
+            withCredentials: true,
+          });
         }
       }
 

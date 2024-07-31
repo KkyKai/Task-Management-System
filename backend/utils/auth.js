@@ -14,7 +14,8 @@ exports.isAuthenticatedUser = (...groupnames) => {
 
     try {
       const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-      req.user = decoded.user;
+      console.log("in auth " + decoded.payload.user);
+      req.user = decoded.payload.user;
 
       const isAuthorized = await Checkgroup(req.user, groupnames);
       console.log(isAuthorized);

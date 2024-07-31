@@ -78,15 +78,34 @@ async function getAllGroups() {
 //Edit user
 async function editUser(user) {
   // Validation to ensure email is not blank
-  if (!user.email || user.email.trim() === '') {
-    throw new Error('Email cannot be blank');
+  if (!user.email || user.email.trim() === "") {
+    throw new Error("Email cannot be blank");
   }
 
   try {
+    /*const isAdminGroup = await getGroupbyUser(username);
+
+    //Check if user is super admin
+    if (user.username === "admin" && isAdminGroup.includes("admin")) {
+      let sql = `UPDATE user SET email = ? WHERE username = ?`;
+      let params = [user.email, user.username];
+      if (user.password && user.password.trim() !== "") {
+        const encryptedPassword = await bcrypt.hash(user.password, saltRounds);
+        sql = `UPDATE user SET email = ?, password = ? WHERE username = ?`;
+        params = [user.email, encryptedPassword, user.username];
+
+        const results = await query(sql, params);
+        return results;
+      }
+      throw new Error(
+        "Normal admins can only edit the email and password of the super admin."
+      );
+    } */
+
     let sql = `UPDATE user SET email = ?, disabled = ? WHERE username = ?`;
     let params = [user.email, user.disabled, user.username];
 
-    if (user.password && user.password.trim() !== '') {
+    if (user.password && user.password.trim() !== "") {
       // If password is not an empty string, hash it and update the password
       const encryptedPassword = await bcrypt.hash(user.password, saltRounds);
       sql = `UPDATE user SET email = ?, password = ?, disabled = ? WHERE username = ?`;
@@ -94,22 +113,6 @@ async function editUser(user) {
     }
 
     const results = await query(sql, params);
-    return results;
-  } catch (error) {
-    console.error("Error editing user:", error);
-    throw error;
-  }
-}
-
-//Edit Group
-async function editGroup(group) {
-  try {
-    const results = await query(
-      `UPDATE usergroup
-      SET groupname = ?
-WHERE id = ?;`,
-      [group.groupname, group.groupid]
-    );
     return results;
   } catch (error) {
     console.error("Error editing user:", error);
@@ -158,9 +161,36 @@ async function addGroups(group) {
   }
 }
 
+//Edit Group
+async function editGroup(group) {
+  try {
+    const results = await query(
+      `UPDATE usergroup
+      SET groupname = ?
+WHERE id = ?;`,
+      [group.groupname, group.groupid]
+    );
+    return results;
+  } catch (error) {
+    console.error("Error editing user:", error);
+    throw error;
+  }
+}
+
 //Register User
 async function createAccount(newUser) {
   try {
+    if (!newUser.username || newUser.username.trim() === "") {
+      throw new Error("Username cannot be an empty string");
+    }
+
+    // Validate other fields if needed
+    if (!newUser.password || newUser.password.trim() === "") {
+      throw new Error("Password cannot be an empty string");
+    }
+    if (!newUser.email || newUser.email.trim() === "") {
+      throw new Error("Email cannot be an empty string");
+    }
     const encryptedPassword = await bcrypt.hash(newUser.password, saltRounds);
     const sql =
       "INSERT INTO user (username, password, email, disabled) VALUES (?,?,?,?);";
@@ -180,6 +210,10 @@ async function createAccount(newUser) {
 
 async function insertUserGroup(newUser) {
   try {
+    // Validate that username is not an empty string
+    if (!newUser.username || newUser.username.trim() === "") {
+      throw new Error("Username cannot be an empty string");
+    }
     const sql = "INSERT INTO usergroup (groupname, userID) VALUES (?,?);";
     const values = [newUser.groupname, newUser.username];
 
@@ -191,7 +225,7 @@ async function insertUserGroup(newUser) {
 }
 
 //Login
-async function login(user) {
+async function login(user, ipAddress, browserType) {
   try {
     const sql = `
     SELECT * FROM user WHERE username = ?;
@@ -223,7 +257,12 @@ async function login(user) {
 
     if (isPasswordMatch) {
       // Passwords match, generate access token
-      const accessToken = generateAccessToken({ user: user.username });
+      const payload = {
+        user: user.username,
+        ip: ipAddress,
+        browser: browserType,
+      };
+      const accessToken = generateAccessToken({ payload });
       return { success: true, accessToken };
     } else {
       // Passwords do not match
@@ -243,6 +282,7 @@ async function Checkgroup(userid, groupname) {
 
   try {
     const [result] = await query(sql, [userid, groupname]);
+    console.log(result.count > 0);
     return result.count > 0; // Return true if the count is greater than 0 (user belongs to group), false otherwise
   } catch (error) {
     console.error("Error checking user group:", error);
@@ -252,7 +292,7 @@ async function Checkgroup(userid, groupname) {
 
 async function findByUserName(username) {
   try {
-    const sql = `SELECT groupname FROM usergroup WHERE userID = ?;`;
+    const sql = `SELECT DISTINCT groupname FROM usergroup WHERE userID = ?;`;
     const results = await query(sql, [username]);
     return results.map((row) => row.groupname); // Return an array of group names
   } catch (error) {
@@ -273,17 +313,16 @@ async function selectByUser(username) {
 //Edit user
 async function editByUser(user) {
   try {
-
-      // Validate that the email is not blank
-  if (!user.email || user.email.trim() === '') {
-    throw new Error('Email cannot be blank');
-  }
+    // Validate that the email is not blank
+    if (!user.email || user.email.trim() === "") {
+      throw new Error("Email cannot be blank");
+    }
     // Initialize SQL query and parameters
     let sql = `UPDATE user SET email = ? WHERE username = ?`;
     let params = [user.email, user.username];
 
     // Check if password is provided and is not an empty string
-    if (user.password && user.password.trim() !== '') {
+    if (user.password && user.password.trim() !== "") {
       // Hash the password
       const encryptedPassword = await bcrypt.hash(user.password, saltRounds);
       sql = `UPDATE user SET email = ?, password = ? WHERE username = ?`;
@@ -304,7 +343,7 @@ module.exports = {
   getAllGroups,
   createAccount,
   login,
-  findByUserName,
+  //findByUserName,
   Checkgroup,
   editUser,
   editGroup,
@@ -314,27 +353,7 @@ module.exports = {
   getGroupbyUser,
   selectByUser,
   editByUser,
+  findByUserName,
 };
 
 //check to convert everythig to lowercase since all data in be shoukd be lowercase
-
-// Passwords match, now check group access
-/*const sqlGroups = "SELECT group_name FROM grouptable;";
-      const groupResults = await query(sqlGroups);
-      const allowedGroups = groupResults.map((row) => row.group_name);
-      let groupAccess = false;
-
-      for (let group of allowedGroups) {
-        if (userData.groupname === group) {
-          groupAccess = true;
-          console.log("I am in " + userData.groupname);
-          break;
-        }
-      }
-
-      if (!groupAccess) {
-        return {
-          success: false,
-          message: "User does not have access to log in",
-        };
-      } */

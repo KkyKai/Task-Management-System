@@ -72,7 +72,7 @@ async function updateGroup(req, res) {
 }
 
 async function removeGroup(req, res) {
-  const groupData = req.body; // Combine username with req.body
+  const groupData = req.body;
   console.log(groupData);
 
   try {
@@ -124,7 +124,15 @@ async function createUserGroup(req, res) {
 // Login User => /login
 async function login(req, res) {
   try {
-    const loggedInUser = await accountModel.login(req.body);
+    const ipAddress =
+      req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const browserType = req.headers["user-agent"];
+
+    const loggedInUser = await accountModel.login(
+      req.body,
+      ipAddress,
+      browserType
+    );
 
     if (loggedInUser.success) {
       // Set the access token in a cookie
@@ -138,8 +146,8 @@ async function login(req, res) {
       });
 
       console.log(loggedInUser.accessToken);
-      console.log(req.body.username);
-      console.log(req.body.password);
+      //console.log(req.body.username);
+      //console.log(req.body.password);
 
       res.json({
         message: `${req.body.username} is logged in!`,
@@ -158,7 +166,7 @@ async function logout(req, res) {
   try {
     // Clear the JWT cookie
     res.clearCookie("jwt");
-    res.json({ message: "Logged out successfully" });
+    res.status(200).json({ message: "Logged out successfully" });
   } catch (error) {
     console.error("Error during logout:", error);
     res.status(500).json({ error: "Internal server error." });
@@ -177,7 +185,7 @@ async function getUserInfo(req, res) {
   }
 }
 
-async function selectByUsers(req, res) {
+/*async function selectByUsers(req, res) {
   console.log(req.params.user);
   try {
     const results = await accountModel.selectByUser(req.params.user);
@@ -187,20 +195,37 @@ async function selectByUsers(req, res) {
     console.error("Error querying database:", error);
     res.status(500).send("Error querying database");
   }
+} */
+
+async function selectByUsers(req, res) {
+  console.log(req.user);
+  try {
+    // if authenticated user === user in param from context
+    if (req.user === req.params.user) {
+      const results = await accountModel.selectByUser(req.user);
+      console.log(results);
+      res.json(results);
+    } else {
+      res.status(500).send("Unauthorised User");
+    }
+  } catch (error) {
+    console.error("Error querying database:", error);
+    res.status(500).send("Error querying database");
+  }
 }
 
 async function updateSelectedUser(req, res) {
-  const username = req.params.username; // Extract username from URL
-  const userData = { ...req.body, username }; // Combine username with req.body
-
-  console.log("userData " + userData);
-
-  console.log("req body " + username);
-
   try {
-    const results = await accountModel.editByUser(userData);
-    console.log(results);
-    res.json(results);
+    const username = req.params.username; // Extract username from URL
+    // if authenticated user === user in param from context
+    if (username === req.user) {
+      const userData = { ...req.body, username }; // Combine username with req.body
+      const results = await accountModel.editByUser(userData);
+      console.log(results);
+      res.json(results);
+    } else {
+      res.status(500).send("Unauthorised User");
+    }
   } catch (error) {
     console.error("Error querying database:", error);
     res.status(500).send("Error querying database");

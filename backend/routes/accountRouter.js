@@ -17,6 +17,10 @@ const {
   updateSelectedUser,
 } = require("../controllers/accountController");
 
+const { findByUserName, Checkgroup } = require("../models/accounts");
+
+const jwt = require("jsonwebtoken");
+
 const { isAuthenticatedUser } = require("../utils/auth");
 
 // Route to retrieve all account info
@@ -31,9 +35,12 @@ router
 router.route("/getAllGroups").get(isAuthenticatedUser("admin"), getAllGroups);
 
 // Route to create account
-router.route("/createAccount").post(isAuthenticatedUser("admin"), createAccount);
+//router
+//  .route("/createAccount")
+//  .post(isAuthenticatedUser("admin"), createAccount);
 
-  //router.route("/createAccount").post(createAccount);
+//For creating super admin
+router.route("/createAccount").post(createAccount);
 
 router
   .route("/createUserGroup")
@@ -50,15 +57,48 @@ router.route("/removeGroup").delete(isAuthenticatedUser("admin"), removeGroup);
 
 router.route("/addGroup").post(isAuthenticatedUser("admin"), addGroup);
 
-router.route("/selectByUsers/:user").get(selectByUsers);
-
-router.route("/updateSelectedUser/:username").put(updateSelectedUser);
-
 router.route("/getUserInfo").get(isAuthenticatedUser("admin"), getUserInfo);
 
 // Route to login
 router.route("/login").post(login);
 
 router.route("/logout").post(logout);
+
+//test
+// Middleware to extract and verify JWT token
+const authenticateToken = (req, res, next) => {
+  console.log(req.cookies.jwt);
+  const token = req.cookies.jwt; // Extract token from cookies
+
+  if (!token) {
+    return res.status(401).json({ error: "No token provided." });
+  }
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: "Invalid token." });
+    }
+    console.log(user.payload.user);
+    req.user = user.payload.user;
+    next();
+  });
+};
+
+router.route("/selectByUsers/:user").get(authenticateToken, selectByUsers);
+
+router
+  .route("/updateSelectedUser/:username")
+  .put(authenticateToken, updateSelectedUser);
+
+router.get("/check-auth", authenticateToken, async (req, res) => {
+  try {
+    console.log("req.user " + req.user);
+    const isAdmin = await Checkgroup(req.user, "admin");
+    res.json({ isAuthenticated: isAdmin });
+  } catch (error) {
+    console.error("Error checking user group:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+});
 
 module.exports = router;
