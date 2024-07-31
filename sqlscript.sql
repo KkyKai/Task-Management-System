@@ -28,7 +28,7 @@ INSERT INTO `usergroup` (`groupname`) VALUES ('project manager');
 INSERT INTO `usergroup` (`groupname`) VALUES ('developer'); 
 
 
-select * from `user`;
+select email from `user` where username = 'toxc' AND email is null;
 
 CREATE TABLE IF NOT EXISTS `usergroup` (
 `id` int NOT NULL PRIMARY KEY AUTO_INCREMENT,

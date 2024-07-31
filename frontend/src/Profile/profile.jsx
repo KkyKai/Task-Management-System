@@ -29,7 +29,10 @@ const Profile = () => {
             withCredentials: true,
           }
         );
-        setUserProfile(response.data);
+        setUserProfile({
+          email: response.data.email || "",
+          password: "",
+        });
       } catch (error) {
         console.error("Failed to fetch user profile", error);
       }
@@ -41,6 +44,7 @@ const Profile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Make the API request to update user profile
       await axios.put(
         `http://localhost:8080/updateSelectedUser/${state.user}`,
         { email: userProfile.email, password: userProfile.password },
@@ -48,10 +52,17 @@ const Profile = () => {
           withCredentials: true,
         }
       );
-      setStatusMessage("User created successfully");
+      // Update status message on success
+      setStatusMessage("Profile updated successfully");
     } catch (error) {
       console.error("Failed to update profile", error);
-      setStatusMessage("Failed to update profile");
+  
+      // Set status message based on the error response
+      if (error.response && error.response.data && error.response.data.message) {
+        setStatusMessage(`Failed to update profile: ${error.response.data.message}`);
+      } else {
+        setStatusMessage("Failed to update profile. Please try again.");
+      }
     }
   };
 

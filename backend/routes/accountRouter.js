@@ -31,9 +31,9 @@ router
 router.route("/getAllGroups").get(isAuthenticatedUser("admin"), getAllGroups);
 
 // Route to create account
-router
-  .route("/createAccount")
-  .post(isAuthenticatedUser("admin"), createAccount);
+router.route("/createAccount").post(isAuthenticatedUser("admin"), createAccount);
+
+  //router.route("/createAccount").post(createAccount);
 
 router
   .route("/createUserGroup")

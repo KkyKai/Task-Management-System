@@ -77,15 +77,23 @@ async function getAllGroups() {
 
 //Edit user
 async function editUser(user) {
+  // Validation to ensure email is not blank
+  if (!user.email || user.email.trim() === '') {
+    throw new Error('Email cannot be blank');
+  }
+
   try {
-    console.log(user.password);
-    const encryptedPassword = await bcrypt.hash(user.password, saltRounds);
-    const results = await query(
-      `UPDATE user
-       SET email = ?, password = ?, disabled = ?
-       WHERE username = ?;`,
-      [user.email, encryptedPassword, user.disabled, user.username]
-    );
+    let sql = `UPDATE user SET email = ?, disabled = ? WHERE username = ?`;
+    let params = [user.email, user.disabled, user.username];
+
+    if (user.password && user.password.trim() !== '') {
+      // If password is not an empty string, hash it and update the password
+      const encryptedPassword = await bcrypt.hash(user.password, saltRounds);
+      sql = `UPDATE user SET email = ?, password = ?, disabled = ? WHERE username = ?`;
+      params = [user.email, encryptedPassword, user.disabled, user.username];
+    }
+
+    const results = await query(sql, params);
     return results;
   } catch (error) {
     console.error("Error editing user:", error);
@@ -112,6 +120,8 @@ WHERE id = ?;`,
 //remove group
 async function removeGroups(group) {
   try {
+    console.log(group.groupname);
+    console.log(group.userID);
     const results = await query(
       `DELETE FROM usergroup where groupname = ? AND userID = ?`,
       [group.groupname, group.userID]
@@ -263,22 +273,31 @@ async function selectByUser(username) {
 //Edit user
 async function editByUser(user) {
   try {
-    console.log(user.password);
-    const encryptedPassword = await bcrypt.hash(user.password, saltRounds);
-    const results = await query(
-      `UPDATE user
-       SET email = ?, password = ?
-       WHERE username = ?;`,
-      [user.email, encryptedPassword, user.username]
-    );
+
+      // Validate that the email is not blank
+  if (!user.email || user.email.trim() === '') {
+    throw new Error('Email cannot be blank');
+  }
+    // Initialize SQL query and parameters
+    let sql = `UPDATE user SET email = ? WHERE username = ?`;
+    let params = [user.email, user.username];
+
+    // Check if password is provided and is not an empty string
+    if (user.password && user.password.trim() !== '') {
+      // Hash the password
+      const encryptedPassword = await bcrypt.hash(user.password, saltRounds);
+      sql = `UPDATE user SET email = ?, password = ? WHERE username = ?`;
+      params = [user.email, encryptedPassword, user.username];
+    }
+
+    // Execute the SQL query
+    const results = await query(sql, params);
     return results;
   } catch (error) {
     console.error("Error editing user:", error);
     throw error;
   }
 }
-
-module.exports = { login, findByUserName, Checkgroup };
 
 module.exports = {
   getAllAccounts,
