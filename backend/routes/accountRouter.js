@@ -6,9 +6,9 @@ const {
   createAccount,
   login,
   logout,
-  getUserInfo,
+  //getUserInfo,
   updateUser,
-  updateGroup,
+  //updateGroup,
   removeGroup,
   addGroup,
   createUserGroup,
@@ -51,13 +51,13 @@ router
   .route("/updateUser/:username")
   .put(isAuthenticatedUser("admin"), updateUser);
 
-router.route("/updateGroup/:id").put(isAuthenticatedUser("admin"), updateGroup);
+//router.route("/updateGroup/:id").put(isAuthenticatedUser("admin"), updateGroup);
 
 router.route("/removeGroup").delete(isAuthenticatedUser("admin"), removeGroup);
 
 router.route("/addGroup").post(isAuthenticatedUser("admin"), addGroup);
 
-router.route("/getUserInfo").get(isAuthenticatedUser("admin"), getUserInfo);
+//router.route("/getUserInfo").get(isAuthenticatedUser("admin"), getUserInfo);
 
 // Route to login
 router.route("/login").post(login);
@@ -67,7 +67,7 @@ router.route("/logout").post(logout);
 //test
 // Middleware to extract and verify JWT token
 const authenticateToken = (req, res, next) => {
-  console.log(req.cookies.jwt);
+  //console.log(req.cookies.jwt);
   const token = req.cookies.jwt; // Extract token from cookies
 
   if (!token) {
@@ -78,7 +78,7 @@ const authenticateToken = (req, res, next) => {
     if (err) {
       return res.status(403).json({ error: "Invalid token." });
     }
-    console.log(user.payload.user);
+    console.log("HELLO USER " + user.payload);
     req.user = user.payload.user;
     next();
   });

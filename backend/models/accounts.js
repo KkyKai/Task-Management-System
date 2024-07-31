@@ -7,6 +7,7 @@ const util = require("util");
 
 const generateAccessToken = require("../utils/generateAccessToken.js");
 
+
 // Promisify the query method
 const query = util.promisify(connection.query).bind(connection);
 
@@ -25,7 +26,7 @@ const query = util.promisify(connection.query).bind(connection);
   }
 } */
 
-async function getAllAccounts() {
+/*async function getAllAccounts() {
   try {
     const results = await query(
       `SELECT username, email, password, disabled
@@ -35,9 +36,21 @@ async function getAllAccounts() {
   } catch (error) {
     throw error;
   }
-}
+} */
 
-async function getGroupbyUser(username) {
+/*async function getAllGroups() {
+  try {
+    const results = await query(
+      `SELECT DISTINCT groupname
+      FROM usergroup;`
+    );
+    return results;
+  } catch (error) {
+    throw error;
+  }
+} */
+
+/*async function getGroupbyUser(username) {
   try {
     console.log(username);
     const results = await query(
@@ -48,7 +61,7 @@ async function getGroupbyUser(username) {
   } catch (error) {
     throw error;
   }
-}
+} */
 
 /*async function tagGrouptoUser(username) {
   try {
@@ -63,27 +76,17 @@ async function getGroupbyUser(username) {
   }
 } */
 
-async function getAllGroups() {
-  try {
-    const results = await query(
-      `SELECT DISTINCT groupname
-      FROM usergroup;`
-    );
-    return results;
-  } catch (error) {
-    throw error;
-  }
-}
+
 
 //Edit user
-async function editUser(user) {
+/*async function editUser(user) {
   // Validation to ensure email is not blank
   if (!user.email || user.email.trim() === "") {
     throw new Error("Email cannot be blank");
   }
 
   try {
-    /*const isAdminGroup = await getGroupbyUser(username);
+    const isAdminGroup = await getGroupbyUser(username);
 
     //Check if user is super admin
     if (user.username === "admin" && isAdminGroup.includes("admin")) {
@@ -100,7 +103,7 @@ async function editUser(user) {
       throw new Error(
         "Normal admins can only edit the email and password of the super admin."
       );
-    } */
+    } 
 
     let sql = `UPDATE user SET email = ?, disabled = ? WHERE username = ?`;
     let params = [user.email, user.disabled, user.username];
@@ -118,10 +121,10 @@ async function editUser(user) {
     console.error("Error editing user:", error);
     throw error;
   }
-}
+} */
 
 //remove group
-async function removeGroups(group) {
+/*async function removeGroups(group) {
   try {
     console.log(group.groupname);
     console.log(group.userID);
@@ -135,9 +138,9 @@ async function removeGroups(group) {
     console.error("Error editing user:", error);
     throw error;
   }
-}
+} */
 
-async function addGroups(group) {
+/*async function addGroups(group) {
   try {
     // Check if the groupname already exists
     const [existingGroup] = await query(
@@ -159,10 +162,10 @@ async function addGroups(group) {
     console.error("Error adding group:", error);
     throw error;
   }
-}
+} */
 
 //Edit Group
-async function editGroup(group) {
+/*async function editGroup(group) {
   try {
     const results = await query(
       `UPDATE usergroup
@@ -175,10 +178,10 @@ WHERE id = ?;`,
     console.error("Error editing user:", error);
     throw error;
   }
-}
+} */
 
 //Register User
-async function createAccount(newUser) {
+/*async function createAccount(newUser) {
   try {
     if (!newUser.username || newUser.username.trim() === "") {
       throw new Error("Username cannot be an empty string");
@@ -206,9 +209,9 @@ async function createAccount(newUser) {
   } catch (error) {
     throw error;
   }
-}
+} */
 
-async function insertUserGroup(newUser) {
+/*async function insertUserGroup(newUser) {
   try {
     // Validate that username is not an empty string
     if (!newUser.username || newUser.username.trim() === "") {
@@ -222,7 +225,7 @@ async function insertUserGroup(newUser) {
   } catch (error) {
     throw error;
   }
-}
+} */
 
 //Login
 async function login(user, ipAddress, browserType) {
@@ -290,7 +293,7 @@ async function Checkgroup(userid, groupname) {
   }
 }
 
-async function findByUserName(username) {
+/*async function findByUserName(username) {
   try {
     const sql = `SELECT DISTINCT groupname FROM usergroup WHERE userID = ?;`;
     const results = await query(sql, [username]);
@@ -298,9 +301,9 @@ async function findByUserName(username) {
   } catch (error) {
     throw error;
   }
-}
+} */
 
-async function selectByUser(username) {
+/*async function selectByUser(username) {
   try {
     const sql = `SELECT email FROM user WHERE username = ?;`;
     const results = await query(sql, [username]);
@@ -308,10 +311,10 @@ async function selectByUser(username) {
   } catch (error) {
     throw error;
   }
-}
+} */
 
 //Edit user
-async function editByUser(user) {
+/*async function editByUser(user) {
   try {
     // Validate that the email is not blank
     if (!user.email || user.email.trim() === "") {
@@ -336,24 +339,23 @@ async function editByUser(user) {
     console.error("Error editing user:", error);
     throw error;
   }
-}
+} */
 
 module.exports = {
-  getAllAccounts,
-  getAllGroups,
-  createAccount,
-  login,
+  //getAllAccounts,
+  //getAllGroups,
+  //createAccount,
+  //login,
   //findByUserName,
   Checkgroup,
-  editUser,
-  editGroup,
-  removeGroups,
-  addGroups,
-  insertUserGroup,
-  getGroupbyUser,
-  selectByUser,
-  editByUser,
-  findByUserName,
+  //editUser,
+  //editGroup,
+  //removeGroups,
+  //addGroups,
+  //insertUserGroup,
+  //getGroupbyUser,
+  //selectByUser,
+  //editByUser,
 };
 
 //check to convert everythig to lowercase since all data in be shoukd be lowercase
