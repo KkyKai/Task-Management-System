@@ -15,48 +15,56 @@ const {
   getGroupbyUsers,
   selectByUsers,
   updateSelectedUser,
-  getUserStatus
+  getUserStatus,
+  checkAuthStatus,
 } = require("../controllers/accountController");
 
 const { findByUserName, Checkgroup } = require("../models/accounts");
 
 const jwt = require("jsonwebtoken");
 
+const { issDisabled } = require("../utils/isDisabled");
 const { isAuthenticatedUser } = require("../utils/auth");
 
 // Route to retrieve all account info
 router
-  .route("/getAllAccounts")
-  .get(isAuthenticatedUser("admin"), getAllAccounts);
+  .route("/getAllAccounts/:username")
+  .get(issDisabled, isAuthenticatedUser("admin"), getAllAccounts);
 
 router
   .route("/getGroupbyUsers/:username")
-  .get(isAuthenticatedUser("admin"), getGroupbyUsers);
-
-router.route("/getAllGroups").get(isAuthenticatedUser("admin"), getAllGroups);
-
-// Route to create account
-//router
-//  .route("/createAccount")
-//  .post(isAuthenticatedUser("admin"), createAccount);
-
-//For creating super admin
-router.route("/createAccount").post(createAccount);
+  .get(issDisabled, isAuthenticatedUser("admin"), getGroupbyUsers);
 
 router
-  .route("/createUserGroup")
-  .post(isAuthenticatedUser("admin"), createUserGroup);
+  .route("/getAllGroups/:username")
+  .get(issDisabled, isAuthenticatedUser("admin"), getAllGroups);
+
+// Route to create account
+router
+  .route("/createAccount/:username")
+  .post(issDisabled, isAuthenticatedUser("admin"), createAccount);
+
+//For creating super admin
+//router.route("/createAccount").post(createAccount);
+
+router
+  .route("/createUserGroup/:username")
+  .post(issDisabled, isAuthenticatedUser("admin"), createUserGroup);
 
 // Route to create account
 router
   .route("/updateUser/:username")
-  .put(isAuthenticatedUser("admin"), updateUser);
+  .put(issDisabled, isAuthenticatedUser("admin"), updateUser);
 
 //router.route("/updateGroup/:id").put(isAuthenticatedUser("admin"), updateGroup);
 
-router.route("/removeGroup").delete(isAuthenticatedUser("admin"), removeGroup);
+router
+  .route("/removeGroup/:username")
+  .delete(issDisabled, isAuthenticatedUser("admin"), removeGroup);
 
-router.route("/addGroup").post(isAuthenticatedUser("admin"), addGroup);
+router
+  .route("/addGroup/:username")
+  .post(issDisabled, isAuthenticatedUser("admin"), addGroup);
 
 //router.route("/getUserInfo").get(isAuthenticatedUser("admin"), getUserInfo);
 
@@ -79,13 +87,15 @@ const authenticateToken = (req, res, next) => {
     if (err) {
       return res.status(403).json({ error: "Invalid token." });
     }
-    console.log("HELLO USER " + user.payload);
+
     req.user = user.payload.user;
     next();
   });
 };
 
-router.route("/selectByUsers/:user").get(authenticateToken, selectByUsers);
+router
+  .route("/selectByUsers/:username")
+  .get(issDisabled, authenticateToken, selectByUsers);
 
 router
   .route("/updateSelectedUser/:username")
@@ -102,6 +112,10 @@ router.get("/check-auth", authenticateToken, async (req, res) => {
   }
 });
 
-router.route("/getUserStatus/:username").get(authenticateToken, getUserStatus);
+router
+  .route("/getUserStatus/:username")
+  .get(issDisabled, authenticateToken, getUserStatus);
+
+router.route("/status").get(checkAuthStatus);
 
 module.exports = router;

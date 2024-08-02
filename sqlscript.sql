@@ -85,14 +85,14 @@ SELECT userID, groupname
     
     SELECT * FROM user join usergroup on user.username = usergroup.userID;
     
-	SELECT u.username, u.email, u.password, u.disabled, GROUP_CONCAT(ug.groupname) AS groupname, GROUP_CONCAT(ug.id) AS id
-	FROM user u
-	JOIN usergroup ug ON u.username = ug.userID
-	GROUP BY u.username;
+		SELECT u.username, u.email, u.password, u.disabled, GROUP_CONCAT(ug.groupname) AS groupname, GROUP_CONCAT(ug.id) AS id
+		FROM user u
+		JOIN usergroup ug ON u.username = ug.userID
+		GROUP BY u.username;
 
 UPDATE user
-SET email = 'tx@gmail.com', disabled = true
-WHERE username = 'pm1';
+SET disabled = false
+WHERE username = 'admintest3';
 
 UPDATE usergroup
       SET groupname = 'monkey'
@@ -123,6 +123,10 @@ GROUP BY u.username;
 select groupname from usergroup where userID = 'dev1';
 
 SELECT email FROM user WHERE username = 'dev1';
+
+SELECT DISTINCT groupname FROM usergroup WHERE userID = 'admintest3';
+
+SELECT DISTINCT groupname FROM usergroup WHERE userID = 'admintest2';
 
 
 

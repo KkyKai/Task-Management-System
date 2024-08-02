@@ -16,31 +16,29 @@ const Profile = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!state.isAuthenticated) {
-      navigate("/");
-      return;
+    if (state.user) {
+      // Check if state.user is not null
+      const fetchUserProfile = async () => {
+        try {
+          const response = await axios.get(
+            `http://localhost:8080/selectByUsers/${state.user}`,
+            {
+              withCredentials: true,
+            }
+          );
+          console.log(response.data[0].email);
+          setUserProfile({
+            email: response.data[0].email || "",
+            password: "",
+          });
+        } catch (error) {
+          console.error("Failed to fetch user profile", error);
+        }
+      };
+
+      fetchUserProfile();
     }
-
-    const fetchUserProfile = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:8080/selectByUsers/${state.user}`,
-          {
-            withCredentials: true,
-          }
-        );
-        console.log(response.data[0].email);
-        setUserProfile({
-          email: response.data[0].email || "",
-          password: "",
-        });
-      } catch (error) {
-        console.error("Failed to fetch user profile", error);
-      }
-    };
-
-    fetchUserProfile();
-  }, [state.isAuthenticated, navigate, state.user]);
+  }, [state.user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
