@@ -32,7 +32,12 @@ const UserManagement = () => {
     disabled: false,
   });
 
-  //const [userStatus, setUserStatus] = useState(false);
+    // Redirect if the user is not authenticated
+    useEffect(() => {
+      if (!state.isAuthenticated) {
+        navigate("/"); // Redirect to the login page
+      }
+    }, [state.isAuthenticated, navigate]);
 
   useEffect(() => {
     const fetchData = async () => {

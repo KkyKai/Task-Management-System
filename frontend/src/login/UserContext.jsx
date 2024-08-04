@@ -1,7 +1,6 @@
-import React, { createContext, useReducer, useEffect } from "react";
+import React, { createContext, useReducer, useEffect, useState  } from "react";
 import axios from "axios";
 import { produce } from "immer";
-
 const UserContext = createContext(null);
 
 // Function to get the initial state including token handling
@@ -44,7 +43,7 @@ const UserProvider = ({ children }) => {
     user: null,
   });
 
-  useEffect(() => {
+  /*useEffect(() => {
     const initializeAuthState = async () => {
       const initialState = await getInitialState();
       dispatch({
@@ -54,7 +53,37 @@ const UserProvider = ({ children }) => {
     };
 
     initializeAuthState();
+  }, []); */
+
+  const [redirectTo, setRedirectTo] = useState(null);
+
+  useEffect(() => {
+    const initializeAuthState = async () => {
+      const initialState = await getInitialState();
+      if (!initialState.isAuthenticated) {
+        console.log("User is not authenticated");
+        setRedirectTo('/'); // Set redirection state
+      } else {
+        console.log("User is authenticated:", initialState.user);
+        dispatch({
+          type: "LOGIN_SUCCESS",
+          payload: initialState,
+        });
+      }
+    };
+
+    initializeAuthState();
   }, []);
+
+  useEffect(() => {
+    if (!state.isAuthenticated) {
+      console.log("User is not authenticated after state change");
+      setRedirectTo('/'); // Set redirection state
+    } else {
+      console.log("User is authenticated after state change:", state.user);
+    }
+  }, [state.isAuthenticated]);
+
 
   return (
     <UserContext.Provider value={{ state, dispatch }}>
