@@ -7,7 +7,8 @@ app.use(cookieParser());
 const dotenv = require("dotenv");
 dotenv.config({ path: "./config/config.env" });
 
-const sqlconnection = require("./routes/accountRouter");
+const accountRouter = require("./routes/accountRouter");
+const authRouter = require("./routes/authRouter");
 
 const cors = require("cors");
 
@@ -26,7 +27,8 @@ app.use(
 );
 
 app.use(express.json());
-app.use(sqlconnection);
+app.use(authRouter);
+app.use(accountRouter);
 
 const PORT = process.env.PORT;
 /** App listening on port */

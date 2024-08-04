@@ -6,7 +6,9 @@ const query = util.promisify(connection.query).bind(connection);
 
 async function issDisabled(req, res, next) {
   try {
-    const username = req.params.username;
+    //const username = req.params.username;
+
+    const username = req.body.user;
 
     console.log("in isDisabled " + username);
 

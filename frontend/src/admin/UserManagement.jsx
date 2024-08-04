@@ -37,19 +37,26 @@ const UserManagement = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const accountsResponse = await axios.get(
+        /*const accountsResponse = await axios.get(
           `http://localhost:8080/getAllAccounts/${state.user}`,
+          { withCredentials: true }
+        ); */
+
+        const accountsResponse = await axios.post(
+          'http://localhost:8080/getAllAccounts',
+          { user: state.user },
           { withCredentials: true }
         );
         const allAccounts = accountsResponse.data;
 
         const groupRequests = allAccounts.map((account) =>
-          axios.get(`http://localhost:8080/getGroupbyUsers/${state.user}`, {
-            params: { username: account.username },
-            withCredentials: true,
-          })
+          axios.post(
+            `http://localhost:8080/getGroupbyUsers`,
+            { user: state.user,
+              username: account.username },
+            { withCredentials: true }
+          )
         );
-
         const groupsResponses = await Promise.all(groupRequests);
 
         const accountsWithGroups = allAccounts.map((account, index) => {
@@ -64,8 +71,9 @@ const UserManagement = () => {
 
         setAccounts(accountsWithGroups);
 
-        const groupsResponse = await axios.get(
-          `http://localhost:8080/getAllGroups/${state.user}`,
+        const groupsResponse = await axios.post(
+          'http://localhost:8080/getAllGroups',
+          { user: state.user },
           { withCredentials: true }
         );
         setGroups(groupsResponse.data.map((group) => group.groupname));
@@ -105,8 +113,9 @@ const UserManagement = () => {
     try {
       // Update user information
       const updateResponse = await axios.put(
-        `http://localhost:8080/updateUser/${state.user}`,
+        `http://localhost:8080/updateUser`,
         {
+          user: state.user,
           username: editValues.username,
           email: editValues.email,
           password: editValues.password,
@@ -135,8 +144,9 @@ const UserManagement = () => {
       if (groupsToAdd.length > 0) {
         for (const group of groupsToAdd) {
           const addGroupResponse = await axios.post(
-            `http://localhost:8080/createUserGroup/${state.user}`,
+            `http://localhost:8080/createUserGroup`,
             {
+              user: state.user,
               groupname: group,
               username: editValues.username,
             },
@@ -154,9 +164,9 @@ const UserManagement = () => {
       if (groupsToRemove.length > 0) {
         for (const group of groupsToRemove) {
           const removeGroupResponse = await axios.delete(
-            `http://localhost:8080/removeGroup/${state.user}`,
+            `http://localhost:8080/removeGroup`,
             {
-              data: { groupname: group, userID: editValues.username },
+              data: { user: state.user, groupname: group, userID: editValues.username },
               withCredentials: true,
             }
           );
@@ -175,8 +185,8 @@ const UserManagement = () => {
       setEditIndex(-1);
     } catch (error) {
       // Display error message
-      setMessage(error.response?.data.message || "Error updating user");
-      console.error("Error updating user:", error);
+      setMessage("Error: " + error.response?.data || "Error updating user");
+      console.error("Error updating user:", error.response.data);
     }
   };
 
@@ -197,14 +207,18 @@ const UserManagement = () => {
         disabled: isDisabled,
       };
 
-      console.log(newUserDetails);
+      console.log("Sending user details:", newUserDetails); 
 
       // Send a POST request to create the new user
       const response = await axios.post(
-        `http://localhost:8080/createAccount/${state.user}`,
-        newUserDetails,
+        'http://localhost:8080/createAccount',
+        {
+          user: state.user,
+          ...newUserDetails
+        },
         { withCredentials: true }
       );
+      
 
       // Display success message from response
       setMessage(response.data.message || "User created successfully");
@@ -222,8 +236,9 @@ const UserManagement = () => {
 
       for (const group of newUser.groupname) {
         await axios.post(
-          `http://localhost:8080/createUserGroup/${state.user}`,
+          `http://localhost:8080/createUserGroup`,
           {
+            user: state.user,
             groupname: group,
             username: newUser.username,
           },
@@ -243,16 +258,16 @@ const UserManagement = () => {
       // Display success message
       setMessage("User created successfully.");
     } catch (error) {
-      console.error("Error creating user:", error);
-      setMessage(error.response?.data.message || "Error creating user");
+      console.error("Error creating user:", error.response.data);
+      setMessage("Error: " + error.response?.data || "Error creating user");
     }
   };
 
   const handleCreateGroup = async () => {
     try {
       await axios.post(
-        `http://localhost:8080/addGroup/${state.user}`,
-        { groupname: newGroup, username: null },
+        `http://localhost:8080/addGroup`,
+        { user: state.user, groupname: newGroup, username: '-' },
         { withCredentials: true }
       );
 
@@ -266,7 +281,7 @@ const UserManagement = () => {
       setMessage("Group created successfully.");
     } catch (error) {
       console.error("Error creating group:", error);
-      setMessage(error.response?.data.message || "Error creating group");
+      setMessage("Error: " + error.response?.data || "Error creating group");
     }
   };
 

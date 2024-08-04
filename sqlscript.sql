@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS `user` (
 `disabled` bool NOT NULL);
 
 
-INSERT INTO `user` (`username`, `password`, `email`, `disabled`) VALUES ('test', 
-'test', 'test@test.com', false); 
+INSERT INTO `user` (`username`, `password`, `email`, `disabled`) VALUES ('-', 
+'-', '-', false); 
 
 select * from user;
 
@@ -31,9 +31,10 @@ INSERT INTO `usergroup` (`groupname`) VALUES ('developer');
 select email from `user` where username = 'toxc' AND email = '';
 
 CREATE TABLE IF NOT EXISTS `usergroup` (
-`id` int NOT NULL PRIMARY KEY AUTO_INCREMENT,
+# `id` int NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `groupname` varchar(50) NOT NULL,
   `userID` varchar(50),
+  PRIMARY KEY (`groupname`, `userID`),
   FOREIGN KEY (`userID`) REFERENCES `user`(`username`)
 );
 

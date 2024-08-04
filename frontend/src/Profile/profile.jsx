@@ -20,12 +20,12 @@ const Profile = () => {
       // Check if state.user is not null
       const fetchUserProfile = async () => {
         try {
-          const response = await axios.get(
-            `http://localhost:8080/selectByUsers/${state.user}`,
-            {
-              withCredentials: true,
-            }
+          const response = await axios.post(
+            'http://localhost:8080/selectByUsers',
+            { user: state.user }, 
+            { withCredentials: true }
           );
+
           console.log(response.data[0].email);
           setUserProfile({
             email: response.data[0].email || "",
@@ -45,8 +45,8 @@ const Profile = () => {
     try {
       // Make the API request to update user profile
       await axios.put(
-        `http://localhost:8080/updateSelectedUser/${state.user}`,
-        { email: userProfile.email, password: userProfile.password },
+        `http://localhost:8080/updateSelectedUser`,
+        { user: state.user, email: userProfile.email, password: userProfile.password },
         {
           withCredentials: true,
         }
@@ -58,12 +58,12 @@ const Profile = () => {
 
       // Set status message based on the error response
       if (
-        error.response &&
-        error.response.data &&
+        error.response ||
+        error.response.data ||
         error.response.data.message
       ) {
         setStatusMessage(
-          `Failed to update profile: ${error.response.data.message}`
+          `Failed to update profile: ${error.response.data}`
         );
       } else {
         setStatusMessage("Failed to update profile. Please try again.");
