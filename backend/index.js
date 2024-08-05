@@ -9,6 +9,7 @@ dotenv.config({ path: "./config/config.env" });
 
 const accountRouter = require("./routes/accountRouter");
 const authRouter = require("./routes/authRouter");
+const taskRouter = require("./routes/taskRouter");
 
 const cors = require("cors");
 
@@ -29,6 +30,7 @@ app.use(
 app.use(express.json());
 app.use(authRouter);
 app.use(accountRouter);
+app.use(taskRouter);
 
 const PORT = process.env.PORT;
 /** App listening on port */

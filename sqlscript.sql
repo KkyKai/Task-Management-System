@@ -112,7 +112,7 @@ SET SQL_SAFE_UPDATES = 1;
       GROUP BY userID;
       
       SELECT DISTINCT groupname
-      FROM usergroup
+      FROM usergroup;
 
 delete from `usergroup` where userID = 'pm1' and groupname = 'admin';
 
@@ -128,6 +128,130 @@ SELECT email FROM user WHERE username = 'dev1';
 SELECT DISTINCT groupname FROM usergroup WHERE userID = 'admintest3';
 
 SELECT DISTINCT groupname FROM usergroup WHERE userID = 'admintest2';
+
+
+
+
+
+CREATE TABLE application (
+    app_acronym VARCHAR(255) NOT NULL,
+    app_description VARCHAR(500),
+    app_rnumber INT NOT NULL,
+    app_startdate DATE NOT NULL,
+    app_enddate DATE NOT NULL,
+    app_permit_create VARCHAR(255),
+    app_permit_open VARCHAR(255),
+    app_permit_todolist VARCHAR(255),
+    app_permit_doing VARCHAR(255),
+    app_permit_done VARCHAR(255),
+    PRIMARY KEY (app_acronym)
+);
+
+drop table application;
+
+-- Inserting the first row
+INSERT INTO `application` (
+    `app_acronym`, 
+    `app_description`,
+	`app_rnumber`, 
+    `app_startdate`, 
+    `app_enddate`
+) 
+VALUES (
+    'APP001', 
+    'Project management application to track tasks and deadlines.', 
+    '50',
+    '2024-01-01', 
+    '2024-12-31'
+);
+
+-- Inserting the second row
+INSERT INTO `application` (
+    `app_acronym`, 
+    `app_description`, 
+    `app_rnumber`, 
+    `app_startdate`, 
+    `app_enddate`
+) 
+VALUES (
+    'APP002', 
+    'Customer relationship management system to manage interactions with clients.', 
+	'40',
+    '2024-02-01', 
+    '2024-11-30'
+);
+
+-- Inserting the third row
+INSERT INTO `application` (
+    `app_acronym`, 
+    `app_description`, 
+    `app_rnumber`, 
+    `app_startdate`, 
+    `app_enddate`
+) 
+VALUES (
+    'APP003', 
+    'Inventory management application for tracking stock levels and orders.', 
+    '40',
+    '2024-03-01', 
+    '2024-10-31'
+);
+
+-- Inserting the fourth row
+INSERT INTO `application` (
+    `app_acronym`, 
+    `app_description`, 
+    `app_rnumber`, 
+    `app_startdate`, 
+    `app_enddate`
+) 
+VALUES (
+    'APP004', 
+    'Human resources management system to handle employee records and payroll.', 
+    '30',
+    '2024-04-01', 
+    '2024-09-30'
+);
+
+select * from application;
+
+CREATE TABLE plan (
+    plan_MVP_name VARCHAR(255) NOT NULL,
+    plan_startDate DATE,
+    plan_endDate DATE,
+    plan_app_Acronym VARCHAR(255),
+    PRIMARY KEY (plan_MVP_name, plan_app_Acronym),
+    FOREIGN KEY (plan_app_Acronym) REFERENCES application(app_acronym)
+);
+
+CREATE TABLE task (
+    task_id VARCHAR(255) NOT NULL PRIMARY KEY,
+    task_name VARCHAR(255) NOT NULL,
+    task_description TEXT,
+    task_notes TEXT NOT NULL,
+    task_state VARCHAR(255) NOT NULL,
+    task_createDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    task_plan VARCHAR(255),
+    task_app_Acronym VARCHAR(255),
+    task_creator VARCHAR(255) NOT NULL,
+    task_owner VARCHAR(255),
+    FOREIGN KEY (task_plan) REFERENCES plan(plan_MVP_name),
+    FOREIGN KEY (task_app_Acronym) REFERENCES application(app_acronym),
+    FOREIGN KEY (task_creator) REFERENCES user(username),
+    FOREIGN KEY (task_owner) REFERENCES user(username)
+);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

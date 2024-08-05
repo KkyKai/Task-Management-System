@@ -12,7 +12,7 @@ const Profile = () => {
 
   const [statusMessage, setStatusMessage] = useState(""); // New state for status message
 
-  const { state } = useContext(UserContext);
+  const { state, dispatch } = useContext(UserContext);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,8 +21,8 @@ const Profile = () => {
       const fetchUserProfile = async () => {
         try {
           const response = await axios.post(
-            'http://localhost:8080/selectByUsers',
-            { user: state.user }, 
+            "http://localhost:8080/selectByUsers",
+            { user: state.user },
             { withCredentials: true }
           );
 
@@ -33,6 +33,17 @@ const Profile = () => {
           });
         } catch (error) {
           console.error("Failed to fetch user profile", error);
+
+          if (error.response) {
+            // Server responded with a status other than 200 range
+            if (
+              error.response.status === 401 ||
+              error.response.status === 403
+            ) {
+              dispatch({ type: "LOGOUT" });
+              navigate("/");
+            }
+          }
         }
       };
 
@@ -46,7 +57,11 @@ const Profile = () => {
       // Make the API request to update user profile
       await axios.put(
         `http://localhost:8080/updateSelectedUser`,
-        { user: state.user, email: userProfile.email, password: userProfile.password },
+        {
+          user: state.user,
+          email: userProfile.email,
+          password: userProfile.password,
+        },
         {
           withCredentials: true,
         }
@@ -56,15 +71,21 @@ const Profile = () => {
     } catch (error) {
       console.error("Failed to update profile", error);
 
+      if (error.response) {
+        // Server responded with a status other than 200 range
+        if (error.response.status === 401 || error.response.status === 403) {
+          dispatch({ type: "LOGOUT" });
+          navigate("/");
+        }
+      }
+
       // Set status message based on the error response
       if (
         error.response ||
         error.response.data ||
         error.response.data.message
       ) {
-        setStatusMessage(
-          `Failed to update profile: ${error.response.data}`
-        );
+        setStatusMessage(`Failed to update profile: ${error.response.data}`);
       } else {
         setStatusMessage("Failed to update profile. Please try again.");
       }

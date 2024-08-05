@@ -10,7 +10,7 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [groups, setGroups] = useState([]);
-  const { state } = useContext(UserContext);
+  const { state, dispatch } = useContext(UserContext);
   const [newGroup, setNewGroup] = useState("");
   const navigate = useNavigate();
   const [message, setMessage] = useState(""); // State for feedback messages
@@ -32,13 +32,6 @@ const UserManagement = () => {
     disabled: false,
   });
 
-    // Redirect if the user is not authenticated
-    useEffect(() => {
-      if (!state.isAuthenticated) {
-        navigate("/"); // Redirect to the login page
-      }
-    }, [state.isAuthenticated, navigate]);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -48,7 +41,7 @@ const UserManagement = () => {
         ); */
 
         const accountsResponse = await axios.post(
-          'http://localhost:8080/getAllAccounts',
+          "http://localhost:8080/getAllAccounts",
           { user: state.user },
           { withCredentials: true }
         );
@@ -57,8 +50,7 @@ const UserManagement = () => {
         const groupRequests = allAccounts.map((account) =>
           axios.post(
             `http://localhost:8080/getGroupbyUsers`,
-            { user: state.user,
-              username: account.username },
+            { user: state.user, username: account.username },
             { withCredentials: true }
           )
         );
@@ -77,7 +69,7 @@ const UserManagement = () => {
         setAccounts(accountsWithGroups);
 
         const groupsResponse = await axios.post(
-          'http://localhost:8080/getAllGroups',
+          "http://localhost:8080/getAllGroups",
           { user: state.user },
           { withCredentials: true }
         );
@@ -171,7 +163,11 @@ const UserManagement = () => {
           const removeGroupResponse = await axios.delete(
             `http://localhost:8080/removeGroup`,
             {
-              data: { user: state.user, groupname: group, userID: editValues.username },
+              data: {
+                user: state.user,
+                groupname: group,
+                userID: editValues.username,
+              },
               withCredentials: true,
             }
           );
@@ -192,6 +188,14 @@ const UserManagement = () => {
       // Display error message
       setMessage("Error: " + error.response?.data || "Error updating user");
       console.error("Error updating user:", error.response.data);
+
+      if (error.response) {
+        // Server responded with a status other than 200 range
+        if (error.response.status === 401 || error.response.status === 403) {
+          dispatch({ type: "LOGOUT" });
+          navigate("/");
+        }
+      }
     }
   };
 
@@ -212,18 +216,17 @@ const UserManagement = () => {
         disabled: isDisabled,
       };
 
-      console.log("Sending user details:", newUserDetails); 
+      console.log("Sending user details:", newUserDetails);
 
       // Send a POST request to create the new user
       const response = await axios.post(
-        'http://localhost:8080/createAccount',
+        "http://localhost:8080/createAccount",
         {
           user: state.user,
-          ...newUserDetails
+          ...newUserDetails,
         },
         { withCredentials: true }
       );
-      
 
       // Display success message from response
       setMessage(response.data.message || "User created successfully");
@@ -265,6 +268,14 @@ const UserManagement = () => {
     } catch (error) {
       console.error("Error creating user:", error.response.data);
       setMessage("Error: " + error.response?.data || "Error creating user");
+
+      if (error.response) {
+        // Server responded with a status other than 200 range
+        if (error.response.status === 401 || error.response.status === 403) {
+          dispatch({ type: "LOGOUT" });
+          navigate("/");
+        }
+      }
     }
   };
 
@@ -272,7 +283,7 @@ const UserManagement = () => {
     try {
       await axios.post(
         `http://localhost:8080/addGroup`,
-        { user: state.user, groupname: newGroup, username: '-' },
+        { user: state.user, groupname: newGroup, username: "-" },
         { withCredentials: true }
       );
 
@@ -287,6 +298,14 @@ const UserManagement = () => {
     } catch (error) {
       console.error("Error creating group:", error);
       setMessage("Error: " + error.response?.data || "Error creating group");
+
+      if (error.response) {
+        // Server responded with a status other than 200 range
+        if (error.response.status === 401 || error.response.status === 403) {
+          dispatch({ type: "LOGOUT" });
+          navigate("/");
+        }
+      }
     }
   };
 

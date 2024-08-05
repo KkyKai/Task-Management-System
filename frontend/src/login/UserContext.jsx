@@ -1,4 +1,4 @@
-import React, { createContext, useReducer, useEffect, useState  } from "react";
+import React, { createContext, useReducer, useEffect, useState } from "react";
 import axios from "axios";
 import { produce } from "immer";
 const UserContext = createContext(null);
@@ -43,7 +43,7 @@ const UserProvider = ({ children }) => {
     user: null,
   });
 
-  /*useEffect(() => {
+  useEffect(() => {
     const initializeAuthState = async () => {
       const initialState = await getInitialState();
       dispatch({
@@ -53,16 +53,25 @@ const UserProvider = ({ children }) => {
     };
 
     initializeAuthState();
-  }, []); */
+  }, []);
 
-  const [redirectTo, setRedirectTo] = useState(null);
+  return (
+    <UserContext.Provider value={{ state, dispatch }}>
+      {children}
+    </UserContext.Provider>
+  );
+};
+
+export { UserContext, UserProvider };
+
+/*const [redirectTo, setRedirectTo] = useState(null);
 
   useEffect(() => {
     const initializeAuthState = async () => {
       const initialState = await getInitialState();
       if (!initialState.isAuthenticated) {
         console.log("User is not authenticated");
-        setRedirectTo('/'); // Set redirection state
+        setRedirectTo("/"); // Set redirection state
       } else {
         console.log("User is authenticated:", initialState.user);
         dispatch({
@@ -78,18 +87,8 @@ const UserProvider = ({ children }) => {
   useEffect(() => {
     if (!state.isAuthenticated) {
       console.log("User is not authenticated after state change");
-      setRedirectTo('/'); // Set redirection state
+      setRedirectTo("/"); // Set redirection state
     } else {
       console.log("User is authenticated after state change:", state.user);
     }
-  }, [state.isAuthenticated]);
-
-
-  return (
-    <UserContext.Provider value={{ state, dispatch }}>
-      {children}
-    </UserContext.Provider>
-  );
-};
-
-export { UserContext, UserProvider };
+  }, [state.isAuthenticated]); */
