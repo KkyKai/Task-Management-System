@@ -31,6 +31,23 @@ const CreateApplication = () => {
       endDate,
       permissions,
     });
+
+    try {
+        // Update user information
+        const response = await axios.put(
+          `http://localhost:8080/createApplication`,
+          {
+            user: state.user,
+            acronym: editValues.username,
+            description: editValues.email,
+            rnumber: editValues.password,
+            startDate: editValues.disabled,
+            endDate: editValues.password,
+            permissions: ...permissions
+          },
+          { withCredentials: true }
+        );
+  
     // After submission, you can navigate back or to another route
   };
 
