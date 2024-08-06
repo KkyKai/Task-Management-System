@@ -8,15 +8,35 @@ import { useNavigate } from "react-router-dom";
 const Application = () => {
   const [applications, setApplications] = useState([]);
   const [error, setError] = useState(null);
-  const { state, dispatch } = useContext(UserContext);
+  const { state } = useContext(UserContext); // `dispatch` is not used
+  const [isProjectLead, setIsProjectLead] = useState(false);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchAuthStatus = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:8080/check-projlead",
+          {
+            withCredentials: true,
+          }
+        );
+        setIsProjectLead(response.data.isAuthenticated); // Set based on boolean response
+      } catch (error) {
+        console.error("Failed to fetch authentication status", error);
+        setIsProjectLead(false);
+      }
+    };
+
+    fetchAuthStatus();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await axios.post(
-          "http://localhost:8080/getAllApplications",
+          "http://localhost:8080/getAllAppNames",
           { user: state.user },
           { withCredentials: true }
         );
@@ -29,21 +49,28 @@ const Application = () => {
 
     fetchData();
   }, [state.user]);
+
   return (
     <div className="container mx-auto p-4">
       <Navbar />
       <h1 className="text-2xl font-bold mb-4">Applications</h1>
-      <div className="flex justify-end mb-4">
-        <button
-          className="bg-purple-600 text-white px-4 py-2 rounded"
-          onClick={() => navigate("/create-application")}
-        >
-          + Create App
-        </button>
-      </div>
+      {isProjectLead && (
+        <div className="flex justify-end mb-4">
+          <button
+            className="bg-purple-600 text-white px-4 py-2 rounded"
+            onClick={() => navigate("/create-application")}
+          >
+            + Create App
+          </button>
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {applications.map((app, index) => (
-          <ApplicationBox key={index} name={app.app_acronym} />
+          <ApplicationBox
+            key={index}
+            name={app.app_acronym}
+            isProjectLead={isProjectLead} // Pass the `isProjectLead` prop
+          />
         ))}
       </div>
     </div>

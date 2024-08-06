@@ -29,7 +29,7 @@ async function login(req, res) {
     }
 
     const userData = results[0];
-    console.log(username);
+    //console.log(username);
 
     // Check if the user is disabled
     if (userData.disabled) {
@@ -58,7 +58,7 @@ async function login(req, res) {
         sameSite: "None", // Ensures the cookie is sent only for same-site requests
       });
 
-      console.log(accessToken);
+      //console.log(accessToken);
       res.json({ message: `${username} is logged in!` });
     } else {
       res.clearCookie("jwt");
@@ -80,8 +80,6 @@ async function logout(req, res) {
     res.status(500).json({ error: "Internal server error." });
   }
 }
-
-
 
 module.exports = {
   login,

@@ -5,7 +5,7 @@ const saltRounds = 10;
 
 const jwt = require("jsonwebtoken");
 
-const { Checkgroup } = require('../models/accounts.js'); // Adjust the path as needed
+const { Checkgroup } = require("../models/accounts.js"); // Adjust the path as needed
 
 //get All Account
 //get all accounts => /getAllAccounts
@@ -18,7 +18,7 @@ async function getAllAccounts(req, res) {
           console.error("Error querying database:", error);
           res.status(500).send("Error querying database");
         } else {
-          console.log(results);
+          //console.log(results);
           res.json(results);
         }
       }
@@ -51,7 +51,7 @@ async function getAllGroups(req, res) {
 
 async function getGroupbyUsers(req, res) {
   const username = req.body.username;
-  console.log("I am in controller " + username);
+  //console.log("I am in controller " + username);
 
   try {
     connection.query(
@@ -62,7 +62,7 @@ async function getGroupbyUsers(req, res) {
           console.error("Error querying database:", error);
           res.status(500).send("Error querying database");
         } else {
-          console.log(results);
+          //console.log(results);
           res.json(results);
         }
       }
@@ -76,7 +76,7 @@ async function getGroupbyUsers(req, res) {
 async function updateUser(req, res) {
   const userData = req.body;
 
-  console.log("updateUser " + userData.disabled);
+  //console.log("updateUser " + userData.disabled);
 
   // Validate user data
   if (!userData.email || userData.email.trim() === "") {
@@ -114,7 +114,11 @@ async function updateUser(req, res) {
         //console.log("I am an admin" + userData.username);
         userData.disabled = false;
         sql = `UPDATE user SET email = ?, password = ? WHERE username = ?`;
-        params = [userData.email.toLowerCase(), encryptedPassword, userData.username.toLowerCase()];
+        params = [
+          userData.email.toLowerCase(),
+          encryptedPassword,
+          userData.username.toLowerCase(),
+        ];
       } else {
         sql = `UPDATE user SET email = ?, password = ?, disabled = ? WHERE username = ?`;
         params = [
@@ -129,10 +133,17 @@ async function updateUser(req, res) {
         //console.log("I am an admin" + userData.username);
         userData.disabled = false;
         sql = `UPDATE user SET email = ? WHERE username = ?`;
-        params = [userData.email.toLowerCase(), userData.username.toLowerCase()];
+        params = [
+          userData.email.toLowerCase(),
+          userData.username.toLowerCase(),
+        ];
       } else {
         sql = `UPDATE user SET email = ?, disabled = ? WHERE username = ?`;
-        params = [userData.email.toLowerCase(), userData.disabled, userData.username.toLowerCase()];
+        params = [
+          userData.email.toLowerCase(),
+          userData.disabled,
+          userData.username.toLowerCase(),
+        ];
       }
     }
 
@@ -142,7 +153,7 @@ async function updateUser(req, res) {
         console.error("Error querying database:", error);
         return res.status(500).send("Error querying database");
       }
-      console.log(results);
+      //console.log(results);
       res.json(results);
     });
   } catch (error) {
@@ -154,15 +165,19 @@ async function updateUser(req, res) {
 async function removeGroup(req, res) {
   const groupData = req.body; // Extract group data from the request body
 
-  console.log(groupData);
+  //console.log(groupData);
 
   // Validate group data
   if (!groupData.groupname || !groupData.userID) {
-    return res.status(400).json({message: "Group name and username are required"});
+    return res
+      .status(400)
+      .json({ message: "Group name and username are required" });
   }
 
   if (groupData.userID === "admin") {
-    return res.status(403).json({message: "Cannot remove group for user 'admin'"});
+    return res
+      .status(403)
+      .json({ message: "Cannot remove group for user 'admin'" });
   }
 
   try {
@@ -175,7 +190,7 @@ async function removeGroup(req, res) {
           console.error("Error querying database:", error);
           return res.status(500).send("Error querying database");
         }
-        console.log(results);
+        //console.log(results);
         res.json(results);
       }
     );
@@ -188,8 +203,8 @@ async function removeGroup(req, res) {
 async function addGroup(req, res) {
   const groupData = req.body; // Extract group data from the request body
 
-  console.log(groupData);
-  console.log(groupData.username);
+  //console.log(groupData);
+  //console.log(groupData.username);
 
   // Validate group data
   if (!groupData.groupname) {
@@ -221,7 +236,7 @@ async function addGroup(req, res) {
               return res.status(500).send("Error inserting into database");
             }
 
-            console.log(insertResults);
+            //console.log(insertResults);
             res.json(insertResults);
           }
         );
@@ -236,24 +251,24 @@ async function addGroup(req, res) {
 async function createAccount(req, res) {
   const newUser = req.body; // Extract new user data from request body
 
-  console.log("in create " + newUser.username);
+  //console.log("in create " + newUser.username);
 
   // Validate user data
   if (!newUser.username || newUser.username.trim() === "") {
     return res.status(400).send("Username cannot be an empty string");
   }
   if (newUser.username.length < 4 || newUser.username.length > 20) {
-    console.log(newUser.username);
+    //console.log(newUser.username);
     return res
       .status(400)
       .send("Username length must be between 4 and 20 characters");
   }
   if (!newUser.password || newUser.password.trim() === "") {
-    console.log(newUser.password);
+    //console.log(newUser.password);
     return res.status(400).send("Password cannot be an empty string");
   }
   if (newUser.password.length < 8 || newUser.password.length > 10) {
-    console.log(newUser.password);
+    //console.log(newUser.password);
     return res
       .status(400)
       .send("Password length must be between 8 and 10 characters");
@@ -293,7 +308,7 @@ async function createAccount(req, res) {
         console.error("Error inserting into database:", error);
         return res.status(500).send("Error sending to database");
       }
-      console.log(results);
+      //console.log(results);
       res.json(results);
     });
   } catch (error) {
@@ -304,27 +319,36 @@ async function createAccount(req, res) {
 
 async function createUserGroup(req, res) {
   const newUser = req.body; // Extract new user group data from the request body
-  console.log(newUser.user);
-  console.log(newUser.groupname);
-  console.log(newUser.username);
+  //console.log(newUser.user);
+  //console.log(newUser.groupname);
+  //console.log(newUser.username);
 
   // Validate user group data
   if (!newUser.username || newUser.username.trim() === "") {
-    return res.status(400).json({message: "Username cannot be an empty string"});
+    return res
+      .status(400)
+      .json({ message: "Username cannot be an empty string" });
   }
   if (!newUser.groupname || newUser.groupname.trim() === "") {
-    return res.status(400).json({message: "Group name cannot be an empty string"});
+    return res
+      .status(400)
+      .json({ message: "Group name cannot be an empty string" });
   }
 
   if (newUser.username === "admin") {
-    console.log("i am addgroup user" + newUser.username);
-    return res.status(403).json({message: "Cannot add group for user 'admin'"});
+    //console.log("i am addgroup user" + newUser.username);
+    return res
+      .status(403)
+      .json({ message: "Cannot add group for user 'admin'" });
   }
 
   try {
     // SQL query to insert user group
     const sql = "INSERT INTO usergroup (groupname, userID) VALUES (?, ?);";
-    const values = [newUser.groupname.toLowerCase(), newUser.username.toLowerCase()];
+    const values = [
+      newUser.groupname.toLowerCase(),
+      newUser.username.toLowerCase(),
+    ];
 
     // Perform the query
     connection.query(sql, values, (error, results) => {
@@ -332,7 +356,7 @@ async function createUserGroup(req, res) {
         console.error("Error inserting into database:", error);
         return res.status(500).send("Error sending to database");
       }
-      console.log(results);
+      //console.log(results);
       res.json(results);
     });
   } catch (error) {
@@ -342,7 +366,7 @@ async function createUserGroup(req, res) {
 }
 
 async function selectByUsers(req, res) {
-  console.log("In selectbyUsers " + req.body.user);
+  //console.log("In selectbyUsers " + req.body.user);
 
   // Extract username from the request parameters
   const username = req.body.user;
@@ -354,11 +378,9 @@ async function selectByUsers(req, res) {
       const sql = "SELECT email FROM user WHERE username = ?;";
 
       // Perform the query
-      const results = await connection
-        .promise()
-        .query(sql, [username]);
+      const results = await connection.promise().query(sql, [username]);
 
-      console.log(results[0]);
+      //console.log(results[0]);
       res.json(results[0]);
     } else {
       res.status(403).send("Unauthorized User");
@@ -385,7 +407,10 @@ async function updateSelectedUser(req, res) {
 
       // Initialize SQL query and parameters
       let sql = `UPDATE user SET email = ? WHERE username = ?`;
-      let params = [userData.email.toLowerCase(), userData.username.toLowerCase()];
+      let params = [
+        userData.email.toLowerCase(),
+        userData.username.toLowerCase(),
+      ];
 
       // Check if password is provided and is not an empty string
       if (userData.password && userData.password.trim() !== "") {
@@ -412,12 +437,16 @@ async function updateSelectedUser(req, res) {
           saltRounds
         );
         sql = `UPDATE user SET email = ?, password = ? WHERE username = ?`;
-        params = [userData.email.toLowerCase(), encryptedPassword, userData.username.toLowerCase()];
+        params = [
+          userData.email.toLowerCase(),
+          encryptedPassword,
+          userData.username.toLowerCase(),
+        ];
       }
 
       // Execute the SQL query
       const [results] = await connection.promise().query(sql, params);
-      console.log(results);
+      //console.log(results);
       res.json(results);
     } else {
       res.status(403).send("Unauthorized User");
@@ -461,8 +490,9 @@ const checkAuthStatus = (req, res) => {
 
 const checkAuth = async (req, res) => {
   try {
-    console.log("req.user ", req.user);
+    //console.log("req.user ", req.user);
     const isAdmin = await Checkgroup(req.user, "admin");
+    //console.log("req.user isAdmin ", isAdmin);
     res.json({ isAuthenticated: isAdmin });
   } catch (error) {
     console.error("Error checking user group:", error);
@@ -470,9 +500,30 @@ const checkAuth = async (req, res) => {
   }
 };
 
+/*const checkAuth = async (req, res) => {
+  try {
+    //console.log("req.user ", req.user);
+    const isAdmin = await Checkgroup(req.user, "admin");
+    const isProjectLead = await Checkgroup(req.user, "projectlead");
+    const isProjectManager = await Checkgroup(req.user, "projectmanager");
+    //console.log("req.user isAdmin ", isAdmin);
+
+    if (isAdmin) {
+      res.json({ isAdminAuthenticated: isAdmin });
+    } else if (isProjectLead) {
+      res.json({ isPLAuthenticated: isProjectLead });
+    } else if (isProjectManager) {
+      res.json({ isPMAuthenticated: isProjectManager });
+    }
+  } catch (error) {
+    console.error("Error checking user group:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+}; */
+
 async function getUserStatus(req, res) {
   const username = req.params.username;
-  console.log(username);
+  //console.log(username);
 
   try {
     connection.query(
@@ -483,7 +534,7 @@ async function getUserStatus(req, res) {
           console.error("Error querying database:", error);
           res.status(500).send("Error querying database");
         } else {
-          console.log(results[0]);
+          //console.log(results[0]);
           res.json(results[0]);
         }
       }
@@ -507,7 +558,7 @@ module.exports = {
   updateSelectedUser,
   getUserStatus,
   checkAuthStatus,
-  checkAuth
+  checkAuth,
 };
 
 //check to convert everythig to lowercase since all data in be shoukd be lowercase

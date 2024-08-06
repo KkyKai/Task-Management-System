@@ -1,12 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-const ApplicationBox = ({ name }) => {
-  const navigate = useNavigate(); // Initialize the navigate function
+const ApplicationBox = ({ name, isProjectLead }) => {
+  const navigate = useNavigate();
 
   // Function to handle the redirection when the box is clicked
   const handleClick = () => {
-    navigate(`/applications/${name}`);
+    navigate(`/applications/${name}`, {
+      state: { applicationName: name, isProjectLead: isProjectLead },
+    });
   };
 
   // Function to handle the redirection when the edit button is clicked
@@ -23,12 +25,14 @@ const ApplicationBox = ({ name }) => {
       >
         <div className="text-xl font-medium mb-4">{name}</div>
       </button>
-      <button
-        className="absolute bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-600"
-        onClick={handleEdit}
-      >
-        + Edit
-      </button>
+      {isProjectLead && (
+        <button
+          className="absolute bottom-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-600"
+          onClick={handleEdit}
+        >
+          + Edit
+        </button>
+      )}
     </div>
   );
 };

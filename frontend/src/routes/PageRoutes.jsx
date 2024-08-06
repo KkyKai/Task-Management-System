@@ -6,6 +6,9 @@ import ProtectedRoute from "../login/PrivateRoute";
 import Profile from "../Profile/profile";
 import Application from "../Application/Application";
 import CreateApplication from "../Application/CreateApplication";
+import EditApplication from "../Application/editApplication";
+import TaskBoard from "../Task/TaskManagement";
+import PlanManagementPage from "../Plan/PlanManagement";
 
 function PageRoutes() {
   return (
@@ -20,7 +23,16 @@ function PageRoutes() {
         <Route path="/profile" element={<Profile />} />
 
         <Route path="/landing" element={<Application />} />
+
         <Route path="/create-application" element={<CreateApplication />} />
+        <Route path="/applications/:name/edit" element={<EditApplication />} />
+
+        <Route path="/applications/:name" element={<TaskBoard />} />
+
+        <Route
+          path="/applications/:name/plan"
+          element={<PlanManagementPage />}
+        />
       </Routes>
     </BrowserRouter>
   );

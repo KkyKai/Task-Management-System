@@ -12,43 +12,88 @@ const CreateApplication = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [permissions, setPermissions] = useState({
-    create: "",
-    open: "",
-    todo: "",
-    doing: "",
-    done: "",
+    app_permit_create: "",
+    app_permit_open: "",
+    app_permit_todolist: "",
+    app_permit_doing: "",
+    app_permit_done: "",
   });
+  const [groups, setGroups] = useState([]); // New state for groups
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    // Fetch groups on component mount
+    const fetchGroups = async () => {
+      try {
+        const groupsResponse = await axios.post(
+          "http://localhost:8080/getAllGroups",
+          { user: state.user },
+          { withCredentials: true }
+        );
+        setGroups(groupsResponse.data.map((group) => group.groupname));
+      } catch (error) {
+        console.error("Error fetching groups:", error);
+      }
+    };
+
+    fetchGroups();
+  }, [state.user]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission
+
+    const processedPermissions = {
+      app_permit_create:
+        permissions.app_permit_create.trim() === ""
+          ? null
+          : permissions.app_permit_create,
+      app_permit_open:
+        permissions.app_permit_open.trim() === ""
+          ? null
+          : permissions.app_permit_open,
+      app_permit_todolist:
+        permissions.app_permit_todolist.trim() === ""
+          ? null
+          : permissions.app_permit_todolist,
+      app_permit_doing:
+        permissions.app_permit_doing.trim() === ""
+          ? null
+          : permissions.app_permit_doing,
+      app_permit_done:
+        permissions.app_permit_done.trim() === ""
+          ? null
+          : permissions.app_permit_done,
+    };
+
+    // Logging the current state for debugging
     console.log({
       acronym,
       description,
       rnumber,
       startDate,
       endDate,
-      permissions,
+      permissions: processedPermissions,
     });
 
     try {
-        // Update user information
-        const response = await axios.put(
-          `http://localhost:8080/createApplication`,
-          {
-            user: state.user,
-            acronym: editValues.username,
-            description: editValues.email,
-            rnumber: editValues.password,
-            startDate: editValues.disabled,
-            endDate: editValues.password,
-            permissions: ...permissions
-          },
-          { withCredentials: true }
-        );
-  
-    // After submission, you can navigate back or to another route
+      // Make the API request
+      const response = await axios.post(
+        "http://localhost:8080/createApplication",
+        {
+          user: state.user,
+          app_acronym: acronym,
+          app_description: description,
+          app_rnumber: rnumber,
+          app_startdate: startDate,
+          app_enddate: endDate,
+          permissions: processedPermissions,
+        },
+        { withCredentials: true }
+      );
+    } catch (error) {
+      // Handle errors
+      console.error("Error updating user information:", error);
+    }
   };
 
   return (
@@ -91,8 +136,8 @@ const CreateApplication = () => {
                 className="w-full p-2 border border-gray-300 rounded"
                 value={rnumber}
                 onChange={(e) => setRnumber(e.target.value)}
-                min="0" // Ensures only positive numbers or zero
-                step="1" // Ensures integer input
+                min="0"
+                step="1"
               />
             </div>
             <div>
@@ -117,76 +162,33 @@ const CreateApplication = () => {
 
           {/* Column 2: Permissions */}
           <div className="space-y-6">
-            <div>
-              <label className="block text-gray-700">Permit_Create:</label>
-              <select
-                className="w-full p-2 border border-gray-300 rounded"
-                value={permissions.create}
-                onChange={(e) =>
-                  setPermissions({ ...permissions, create: e.target.value })
-                }
-              >
-                <option>Select Group</option>
-                <option value="group1">Group 1</option>
-                <option value="group2">Group 2</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-gray-700">Permit_Open:</label>
-              <select
-                className="w-full p-2 border border-gray-300 rounded"
-                value={permissions.open}
-                onChange={(e) =>
-                  setPermissions({ ...permissions, open: e.target.value })
-                }
-              >
-                <option>Select Group</option>
-                <option value="group1">Group 1</option>
-                <option value="group2">Group 2</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-gray-700">Permit_ToDo:</label>
-              <select
-                className="w-full p-2 border border-gray-300 rounded"
-                value={permissions.todo}
-                onChange={(e) =>
-                  setPermissions({ ...permissions, todo: e.target.value })
-                }
-              >
-                <option>Select Group</option>
-                <option value="group1">Group 1</option>
-                <option value="group2">Group 2</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-gray-700">Permit_Doing:</label>
-              <select
-                className="w-full p-2 border border-gray-300 rounded"
-                value={permissions.doing}
-                onChange={(e) =>
-                  setPermissions({ ...permissions, doing: e.target.value })
-                }
-              >
-                <option>Select Group</option>
-                <option value="group1">Group 1</option>
-                <option value="group2">Group 2</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-gray-700">Permit_Done:</label>
-              <select
-                className="w-full p-2 border border-gray-300 rounded"
-                value={permissions.done}
-                onChange={(e) =>
-                  setPermissions({ ...permissions, done: e.target.value })
-                }
-              >
-                <option>Select Group</option>
-                <option value="group1">Group 1</option>
-                <option value="group2">Group 2</option>
-              </select>
-            </div>
+            {["create", "open", "todolist", "doing", "done"].map(
+              (permission) => (
+                <div key={permission}>
+                  <label className="block text-gray-700">
+                    Permit_
+                    {permission.charAt(0).toUpperCase() + permission.slice(1)}:
+                  </label>
+                  <select
+                    className="w-full p-2 border border-gray-300 rounded"
+                    value={permissions[`app_permit_${permission}`]}
+                    onChange={(e) =>
+                      setPermissions({
+                        ...permissions,
+                        [`app_permit_${permission}`]: e.target.value,
+                      })
+                    }
+                  >
+                    <option>Select Group</option>
+                    {groups.map((group) => (
+                      <option key={group} value={group}>
+                        {group}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )
+            )}
           </div>
         </div>
         <div className="text-center mt-6">

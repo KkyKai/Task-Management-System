@@ -14,7 +14,7 @@ async function Checkgroup(userid, groupname) {
 
   try {
     const [result] = await query(sql, [userid, groupname]);
-    console.log(result.count > 0);
+    console.log("In Checkgroup " + (result.count > 0));
     return result.count > 0; // Return true if the count is greater than 0 (user belongs to group), false otherwise
   } catch (error) {
     console.error("Error checking user group:", error);

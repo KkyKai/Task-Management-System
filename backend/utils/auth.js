@@ -34,11 +34,11 @@ exports.isAuthenticatedUser = (...groupnames) => {
 
     try {
       const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-      console.log("in auth " + decoded.payload.user);
+      //console.log("in auth " + decoded.payload.user);
       req.user = decoded.payload.user;
 
       const isAuthorized = await Checkgroup(req.user, groupnames);
-      console.log(isAuthorized);
+      console.log("In auth check isAuthorised " + isAuthorized);
 
       if (!isAuthorized) {
         return res.status(403).json({
@@ -48,7 +48,7 @@ exports.isAuthenticatedUser = (...groupnames) => {
 
       next();
     } catch (error) {
-      console.error("Authentication/Authorization error:", error);
+      //console.error("Authentication/Authorization error:", error);
       if (error.name === "TokenExpiryedError") {
         return res
           .status(401)
