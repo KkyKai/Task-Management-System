@@ -131,7 +131,7 @@ SELECT DISTINCT groupname FROM usergroup WHERE userID = 'admintest2';
 
 
 
-
+drop table application;
 
 CREATE TABLE application (
     app_acronym VARCHAR(255) NOT NULL,
@@ -146,8 +146,6 @@ CREATE TABLE application (
     app_permit_done VARCHAR(255),
     PRIMARY KEY (app_acronym)
 );
-
-drop table application;
 
 -- Inserting the first row
 INSERT INTO `application` (
@@ -214,6 +212,10 @@ VALUES (
 );
 
 select * from application;
+
+select app_acronym, app_permit_open from application;
+select app_acronym, app_permit_open from application where app_permit_open = '';
+
 
 CREATE TABLE plan (
     plan_MVP_name VARCHAR(255) NOT NULL,
