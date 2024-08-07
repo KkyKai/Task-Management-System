@@ -35,11 +35,6 @@ const UserManagement = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        /*const accountsResponse = await axios.get(
-          `http://localhost:8080/getAllAccounts/${state.user}`,
-          { withCredentials: true }
-        ); */
-
         const accountsResponse = await axios.post(
           "http://localhost:8080/getAllAccounts",
           { user: state.user },

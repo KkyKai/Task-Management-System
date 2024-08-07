@@ -219,12 +219,14 @@ select app_acronym, app_permit_open from application where app_permit_open = '';
 
 CREATE TABLE plan (
     plan_MVP_name VARCHAR(255) NOT NULL,
-    plan_startDate DATE,
-    plan_endDate DATE,
-    plan_app_Acronym VARCHAR(255),
+    plan_startDate DATE NOT NULL,
+    plan_endDate DATE NOT NULL,
+    plan_app_Acronym VARCHAR(255) NOT NULL,
     PRIMARY KEY (plan_MVP_name, plan_app_Acronym),
     FOREIGN KEY (plan_app_Acronym) REFERENCES application(app_acronym)
 );
+
+
 
 CREATE TABLE task (
     task_id VARCHAR(255) NOT NULL PRIMARY KEY,
