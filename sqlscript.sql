@@ -213,6 +213,10 @@ VALUES (
 
 select * from application;
 
+select * from plan;
+
+drop table plan;
+
 select app_acronym, app_permit_open from application;
 select app_acronym, app_permit_open from application where app_permit_open = '';
 
