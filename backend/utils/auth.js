@@ -61,7 +61,7 @@ exports.isAuthenticatedUser = (...groupnames) => {
   };
 };
 
-/*exports.isAuthenticatedUser = (getGroupnames) => {
+/*exports.authTaskUser = (getGroupnames) => {
   return async (req, res, next) => {
     const token = req.cookies.jwt; // Extract the token from the cookies
 
