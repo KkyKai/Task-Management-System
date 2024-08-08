@@ -39,7 +39,11 @@ const TaskManagementPage = () => {
   };
 
   const handleCreateTask = () => {
-    navigate(`/applications/${applicationName}/tasks/create`);
+    navigate(`/applications/${applicationName}/tasks/create`, {
+      state: {
+        applicationName: applicationName,
+      },
+    });
   };
 
   const handleReviewTask = (taskId, e) => {

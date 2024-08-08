@@ -10,6 +10,12 @@ const {
   createPlan,
   getAllPlans,
   getApplicationPlan,
+  editPlan,
+  getAppPermitCreate,
+  getAppPermitOpen,
+  getAppPermitTodo,
+  getAppPermitDoing,
+  getAppPermitDone,
 } = require("../controllers/taskController");
 
 const jwt = require("jsonwebtoken");
@@ -54,5 +60,25 @@ router
 router
   .route("/getApplicationPlan")
   .post(issDisabled, isAuthenticatedUser("projectmanager"), getApplicationPlan);
+
+router
+  .route("/editPlan")
+  .post(issDisabled, isAuthenticatedUser("projectmanager"), editPlan);
+
+router
+  .route("/getAppPermitCreate")
+  .post(issDisabled, authenticateToken, getAppPermitCreate);
+router
+  .route("/getAppPermitOpen")
+  .post(issDisabled, authenticateToken, getAppPermitOpen);
+router
+  .route("/getAppPermitTodo")
+  .post(issDisabled, authenticateToken, getAppPermitTodo);
+router
+  .route("/getAppPermitDoing")
+  .post(issDisabled, authenticateToken, getAppPermitDoing);
+router
+  .route("/getAppPermitDone")
+  .post(issDisabled, authenticateToken, getAppPermitDone);
 
 module.exports = router;

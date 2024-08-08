@@ -59,11 +59,13 @@ const PlanManagementPage = () => {
   const handleSave = async () => {
     try {
       await axios.post(
-        "http://localhost:8080/updatePlan",
+        "http://localhost:8080/editPlan",
         {
-          planId: editingPlanId,
-          startDate: editStartDate,
-          endDate: editEndDate,
+          user: state.user,
+          plan_startDate: editStartDate,
+          plan_endDate: editEndDate,
+          plan_MVP_name: editingPlanId,
+          plan_app_Acronym: applicationName,
         },
         { withCredentials: true }
       );

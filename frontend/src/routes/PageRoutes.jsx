@@ -11,6 +11,7 @@ import TaskBoard from "../Task/TaskManagement";
 import PlanManagementPage from "../Plan/PlanManagement";
 import CreatePlanPage from "../Plan/CreatePlan";
 import EditPlanPage from "../Plan/EditPlan";
+import CreateTask from "../Task/CreateTask";
 
 function PageRoutes() {
   return (
@@ -42,6 +43,11 @@ function PageRoutes() {
         <Route
           path="/applications/:applicationName/plans/:planId/edit"
           element={<EditPlanPage />}
+        />
+
+        <Route
+          path="/applications/:applicationName/tasks/create"
+          element={<CreateTask />}
         />
       </Routes>
     </BrowserRouter>

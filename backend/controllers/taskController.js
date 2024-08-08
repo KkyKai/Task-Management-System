@@ -361,6 +361,252 @@ async function getApplicationPlan(req, res) {
     res.status(500).send("Error querying database");
   }
 }
+
+async function editPlan(req, res) {
+  const { plan_MVP_name, plan_startDate, plan_endDate, plan_app_Acronym } =
+    req.body;
+
+  console.log(plan_MVP_name, plan_app_Acronym);
+
+  // Prepare the SQL query and values
+  const query = `
+    UPDATE plan
+    SET
+      plan_startDate = ?, 
+      plan_endDate = ?
+    WHERE plan_MVP_name = ? AND plan_app_Acronym = ?
+  `;
+
+  const values = [
+    plan_startDate !== undefined ? plan_startDate : null,
+    plan_endDate !== undefined ? plan_endDate : null,
+    plan_MVP_name,
+    plan_app_Acronym,
+  ];
+
+  // Start a transaction
+  connection.beginTransaction(async (err) => {
+    if (err) {
+      console.error("Error starting transaction:", err);
+      return res.status(500).send("Error starting transaction");
+    }
+
+    try {
+      connection.query(query, values, (error, results) => {
+        if (error) {
+          // Rollback transaction on error
+          return connection.rollback(() => {
+            console.error("Error querying database:", error);
+            res.status(500).send("Error querying database");
+          });
+        }
+
+        // Commit transaction on success
+        connection.commit((commitError) => {
+          if (commitError) {
+            // Rollback transaction on commit error
+            return connection.rollback(() => {
+              console.error("Error committing transaction:", commitError);
+              res.status(500).send("Error committing transaction");
+            });
+          }
+
+          console.log("Record updated:", results);
+          res.status(200).json({ message: "Plan updated successfully" });
+        });
+      });
+    } catch (error) {
+      // Rollback transaction on unexpected error
+      connection.rollback(() => {
+        console.error("Unexpected error:", error);
+        res.status(500).send("Unexpected error");
+      });
+    }
+  });
+}
+
+async function getAppPermitCreate(req, res) {
+  try {
+    const acronym = req.body.app_acronym;
+
+    connection.query(
+      `SELECT app_permit_create FROM application WHERE app_acronym = ?;`,
+      [acronym],
+      (error, results) => {
+        if (error) {
+          console.error("Error querying database:", error);
+          res.status(500).send("Error querying database");
+        } else {
+          //console.log(results);
+          res.json(results[0]);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    res.status(500).send("Unexpected error");
+  }
+}
+
+async function getAppPermitOpen(req, res) {
+  try {
+    const acronym = req.body.app_acronym;
+
+    connection.query(
+      `SELECT app_permit_create FROM application WHERE app_acronym = ?;`,
+      [acronym],
+      (error, results) => {
+        if (error) {
+          console.error("Error querying database:", error);
+          res.status(500).send("Error querying database");
+        } else {
+          //console.log(results);
+          res.json(results[0]);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    res.status(500).send("Unexpected error");
+  }
+}
+
+async function getAppPermitTodo(req, res) {
+  try {
+    const acronym = req.body.app_acronym;
+
+    connection.query(
+      `SELECT app_permit_todolist FROM application WHERE app_acronym = ?;`,
+      [acronym],
+      (error, results) => {
+        if (error) {
+          console.error("Error querying database:", error);
+          res.status(500).send("Error querying database");
+        } else {
+          //console.log(results);
+          res.json(results[0]);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    res.status(500).send("Unexpected error");
+  }
+}
+
+async function getAppPermitDoing(req, res) {
+  try {
+    const acronym = req.body.app_acronym;
+
+    connection.query(
+      `SELECT app_permit_doing FROM application WHERE app_acronym = ?;`,
+      [acronym],
+      (error, results) => {
+        if (error) {
+          console.error("Error querying database:", error);
+          res.status(500).send("Error querying database");
+        } else {
+          //console.log(results);
+          res.json(results[0]);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    res.status(500).send("Unexpected error");
+  }
+}
+
+async function getAppPermitDone(req, res) {
+  try {
+    const acronym = req.body.app_acronym;
+
+    connection.query(
+      `SELECT app_permit_done FROM application WHERE app_acronym = ?;`,
+      [acronym],
+      (error, results) => {
+        if (error) {
+          console.error("Error querying database:", error);
+          res.status(500).send("Error querying database");
+        } else {
+          //console.log(results);
+          res.json(results[0]);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    res.status(500).send("Unexpected error");
+  }
+}
+
+/*async function createTask(req, res) {
+  const { plan_MVP_name, plan_startDate, plan_endDate, plan_app_Acronym } =
+    req.body;
+
+  // Validate required fields
+  if (!plan_MVP_name || !plan_startDate || !plan_endDate || !plan_app_Acronym) {
+    return res.status(400).send("Missing required fields.");
+  }
+
+  // Prepare the SQL query and values
+  const query = `
+        INSERT INTO plan (
+            plan_MVP_name, 
+            plan_startDate, 
+            plan_endDate, 
+            plan_app_Acronym
+        ) VALUES (?, ?, ?, ?)
+    `;
+
+  const values = [
+    plan_MVP_name,
+    plan_startDate,
+    plan_endDate,
+    plan_app_Acronym,
+  ];
+
+  // Start a transaction
+  connection.beginTransaction(async (err) => {
+    if (err) {
+      console.error("Error starting transaction:", err);
+      return res.status(500).send("Error starting transaction");
+    }
+
+    try {
+      connection.query(query, values, (error, results) => {
+        if (error) {
+          // Rollback transaction on error
+          return connection.rollback(() => {
+            console.error("Error querying database:", error);
+            res.status(500).send("Error querying database");
+          });
+        }
+
+        // Commit transaction on success
+        connection.commit((commitError) => {
+          if (commitError) {
+            // Rollback transaction on commit error
+            return connection.rollback(() => {
+              console.error("Error committing transaction:", commitError);
+              res.status(500).send("Error committing transaction");
+            });
+          }
+
+          console.log("Record inserted:", results);
+          res.status(201).json({ id: results.insertId });
+        });
+      });
+    } catch (error) {
+      // Rollback transaction on unexpected error
+      connection.rollback(() => {
+        console.error("Unexpected error:", error);
+        res.status(500).send("Unexpected error");
+      });
+    }
+  });
+} */
+
 module.exports = {
   checkPL,
   checkPM,
@@ -371,4 +617,11 @@ module.exports = {
   createPlan,
   getAllPlans,
   getApplicationPlan,
+  editPlan,
+  //createTask,
+  getAppPermitCreate,
+  getAppPermitOpen,
+  getAppPermitTodo,
+  getAppPermitDoing,
+  getAppPermitDone,
 };
