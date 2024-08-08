@@ -213,6 +213,8 @@ VALUES (
 
 select * from application;
 
+SELECT app_permit_done FROM application WHERE app_acronym = 'test';
+
 select * from plan;
 
 drop table plan;
