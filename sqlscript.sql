@@ -215,6 +215,9 @@ select * from application;
 
 SELECT app_permit_done FROM application WHERE app_acronym = 'test';
 
+SELECT app_permit_create FROM application WHERE app_acronym = 'test';
+
+
 select * from plan;
 
 drop table plan;
@@ -234,31 +237,46 @@ CREATE TABLE plan (
 
 
 
-CREATE TABLE tasknote (
-    task_id INTEGER NOT NULL PRIMARY KEY,
-    notes TEXT NOT NULL
-);
+
+
+
 
 
 CREATE TABLE task (
     task_id VARCHAR(255) NOT NULL PRIMARY KEY,
     task_name VARCHAR(255) NOT NULL,
     task_description VARCHAR (500),
-    task_notes INTEGER NOT NULL,
     task_state VARCHAR(255) NOT NULL,
-    task_createDate DATE,
+    task_createDate DATE NOT NULL,
     task_plan VARCHAR(255),
-    task_app_Acronym VARCHAR(255),
+    task_app_Acronym VARCHAR(255) NOT NULL,
     task_creator VARCHAR(50) NOT NULL,
-    task_owner VARCHAR(50),
+    task_owner VARCHAR(50) NOT NULL,
     FOREIGN KEY (task_plan) REFERENCES plan(plan_MVP_name),
     FOREIGN KEY (task_app_Acronym) REFERENCES application(app_acronym),
     FOREIGN KEY (task_creator) REFERENCES user(username),
-    FOREIGN KEY (task_owner) REFERENCES user(username),
-	FOREIGN KEY (task_notes) REFERENCES tasknote(task_id)	
+    FOREIGN KEY (task_owner) REFERENCES user(username)
 );
 
+CREATE TABLE task_note (
+    task_id VARCHAR(255) NOT NULL,
+    notes TEXT NOT NULL,
+    tasknote_created DATETIME NOT NULL,
+    PRIMARY KEY (task_id, tasknote_created),
+    FOREIGN KEY (task_id) REFERENCES task (task_id)
+);
 
+select * from task;
+
+select * from task_note;
+
+select * from application;
+
+select * from usergroup;
+
+SELECT * FROM task where task_app_Acronym = 'APP003';
+
+SELECT * FROM task where task_id = 'APP003_40';
 
 
 

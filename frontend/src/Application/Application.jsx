@@ -14,6 +14,8 @@ const Application = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (state.loading) return; // Return early if user data is still loading
+
     const fetchAuthStatus = async () => {
       try {
         const response = await axios.get(
@@ -48,7 +50,7 @@ const Application = () => {
     };
 
     fetchData();
-  }, [state.user]);
+  }, [state.user, state.loading]);
 
   return (
     <div className="container mx-auto p-4">

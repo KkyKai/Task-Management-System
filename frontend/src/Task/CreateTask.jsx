@@ -1,26 +1,70 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../util/Navbar";
+import axios from "axios";
+import { UserContext } from "../login/UserContext";
 
 const CreateTask = () => {
   const [taskName, setTaskName] = useState("");
   const [description, setDescription] = useState("");
   const [plan, setPlan] = useState("");
+  const [plans, setPlans] = useState([]);
   const navigate = useNavigate();
   const location = useLocation();
+  const { state } = useContext(UserContext);
 
   const { applicationName } = location.state || {};
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (!state.user || state.loading) return;
+
+    const fetchPlans = async () => {
+      try {
+        const response = await axios.post(
+          "http://localhost:8080/getApplicationPlan",
+          { user: state.user, app_acronym: applicationName },
+          { withCredentials: true }
+        );
+        const planNames = response.data.map((plan) => plan.plan_MVP_name);
+        setPlans(planNames);
+      } catch (error) {
+        console.error("Error fetching plans:", error);
+      }
+    };
+
+    fetchPlans();
+  }, [state.user, state.loading, applicationName]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission, e.g., send data to backend
-    console.log("Task Created:", { taskName, description, plan });
-    // Navigate back to the task management page
-    navigate(-1); // This navigates back to the previous page
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/createTask",
+        {
+          user: state.user,
+          task_name: taskName,
+          task_description: description,
+          task_plan: plan,
+          task_app_Acronym: applicationName,
+          task_creator: state.user,
+          task_owner: state.user,
+        },
+        { withCredentials: true }
+      );
+
+      console.log("Task Created:", response.data);
+
+      // Clear form fields after successful task creation
+      setTaskName("");
+      setDescription("");
+      setPlan("");
+    } catch (error) {
+      console.error("Error creating task:", error);
+    }
   };
 
   const handleBack = () => {
-    navigate(-1); // This navigates back to the previous page
+    navigate(-1); // Navigate back to the previous page
   };
 
   return (
@@ -80,12 +124,13 @@ const CreateTask = () => {
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-              required
             >
               <option value="">Select Plan</option>
-              <option value="Plan 1">Plan 1</option>
-              <option value="Plan 2">Plan 2</option>
-              <option value="Plan 3">Plan 3</option>
+              {plans.map((p, index) => (
+                <option key={index} value={p}>
+                  {p}
+                </option>
+              ))}
             </select>
           </div>
           <button

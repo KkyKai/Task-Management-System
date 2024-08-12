@@ -11,17 +11,30 @@ const {
   getAllPlans,
   getApplicationPlan,
   editPlan,
+  createTask,
   getAppPermitCreate,
   getAppPermitOpen,
   getAppPermitTodo,
   getAppPermitDoing,
   getAppPermitDone,
+  getAllTask,
+  getTaskDetails,
+  getAuditTrail,
 } = require("../controllers/taskController");
 
 const jwt = require("jsonwebtoken");
 
 const { issDisabled } = require("../utils/isDisabled");
 const { authenticateToken, isAuthenticatedUser } = require("../utils/auth");
+
+const {
+  checkCreatePermission,
+  checkOpenPermission,
+  checkTodoPermission,
+  checkDoingPermission,
+  checkDonePermission,
+  getPermit,
+} = require("../utils/permit");
 
 router
   .route("/getAllAppNames")
@@ -59,7 +72,7 @@ router
 
 router
   .route("/getApplicationPlan")
-  .post(issDisabled, isAuthenticatedUser("projectmanager"), getApplicationPlan);
+  .post(issDisabled, authenticateToken, getApplicationPlan);
 
 router
   .route("/editPlan")
@@ -80,5 +93,19 @@ router
 router
   .route("/getAppPermitDone")
   .post(issDisabled, authenticateToken, getAppPermitDone);
+
+router.route("/getAllTask").post(issDisabled, authenticateToken, getAllTask);
+
+router
+  .route("/createTask")
+  .post(issDisabled, checkCreatePermission, createTask);
+
+router
+  .route("/getTaskDetails")
+  .post(issDisabled, authenticateToken, getTaskDetails);
+
+router
+  .route("/getAuditTrail")
+  .post(issDisabled, authenticateToken, getAuditTrail);
 
 module.exports = router;
