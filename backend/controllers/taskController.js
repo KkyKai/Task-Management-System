@@ -354,7 +354,7 @@ async function getApplicationPlan(req, res) {
   try {
     // Execute the query using the promisified query method
     const results = await query(sqlQuery, values);
-    console.log("Query results:", results);
+    //console.log("Query results:", results);
     res.status(200).json(results);
   } catch (error) {
     console.error("Error querying database:", error);
@@ -831,6 +831,261 @@ async function getAuditTrail(req, res) {
   }
 }
 
+async function updateTaskWithStateChange(req, res) {
+  const {
+    task_id,
+    task_description,
+    task_plan,
+    task_state,
+    task_owner,
+    notes,
+  } = req.body;
+
+  console.log(task_owner);
+
+  //const currentDateTime = new Date().toISOString();
+
+  const currentDateTime = new Date()
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+
+  const systemDateTime = new Date(Date.now() + 1000)
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+  console.log(currentDateTime);
+
+  // Define note messages based on task_state
+  const noteMessages = {
+    todo: `User ${task_owner} has released task.`,
+    doing: `User ${task_owner} has taken on task.`,
+    done: `User ${task_owner} has submitted task.`,
+    closed: `User ${task_owner} has closed task.`,
+  };
+
+  const newNote = `[System, ${task_state}] ${currentDateTime} ${
+    noteMessages[task_state] || "Task state updated."
+  }`;
+
+  const queryIfDescription = `UPDATE task SET task_description = ? WHERE task_id = ?`;
+  const queryIfPlan = "UPDATE task SET task_plan = ? WHERE task_id = ?";
+  const querySetState =
+    "UPDATE task SET task_state = ?, task_owner = ? WHERE task_id = ?";
+  const queryTaskNotes = `INSERT INTO task_note (task_id, notes, tasknote_created) VALUES (?, ?, ?)`;
+
+  const descriptionValues = [task_description, task_id];
+  const planValues = [task_plan, task_id];
+  const stateValues = [task_state, task_owner, task_id];
+  const taskNoteValues = [task_id, notes, systemDateTime];
+  const taskSystemNoteValues = [task_id, newNote, currentDateTime];
+
+  connection.beginTransaction(async (err) => {
+    if (err) {
+      console.error("Error starting transaction:", err);
+      return res.status(500).send("Error starting transaction");
+    }
+
+    try {
+      // Update task_description if provided
+      if (task_description !== undefined && task_description !== "") {
+        await query(queryIfDescription, descriptionValues);
+      }
+
+      // Update task_plan if provided
+      if (task_plan !== undefined && task_plan !== "") {
+        await query(queryIfPlan, planValues);
+      }
+
+      // Update task_state
+      await query(querySetState, stateValues);
+
+      if (notes !== undefined && notes !== "") {
+        // Insert into task_note
+        await query(queryTaskNotes, taskNoteValues);
+      }
+
+      // Insert into task_note system message
+      await query(queryTaskNotes, taskSystemNoteValues);
+
+      // Commit transaction
+      connection.commit((err) => {
+        if (err) {
+          console.error("Error committing transaction:", err);
+          return connection.rollback(() => {
+            res.status(500).send("Error committing transaction");
+          });
+        }
+        res.send("Task updated and note added successfully");
+      });
+    } catch (error) {
+      // Rollback transaction on error
+      console.error("Error processing transaction:", error);
+      connection.rollback(() => {
+        res.status(500).send("Error processing transaction");
+      });
+    }
+  });
+}
+
+async function updateTaskNoStateChange(req, res) {
+  const { task_id, task_description, task_plan, notes } = req.body;
+
+  //const currentDateTime = new Date().toISOString();
+
+  const currentDateTime = new Date()
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+
+  const queryIfDescription = `UPDATE task SET task_description = ? WHERE task_id = ?`;
+  const queryIfPlan = "UPDATE task SET task_plan = ? WHERE task_id = ?";
+  const queryTaskNotes = `INSERT INTO task_note (task_id, notes, tasknote_created) VALUES (?, ?, ?)`;
+
+  const descriptionValues = [task_description, task_id];
+  const planValues = [task_plan, task_id];
+  const taskNoteValues = [task_id, notes, currentDateTime];
+
+  connection.beginTransaction(async (err) => {
+    if (err) {
+      console.error("Error starting transaction:", err);
+      return res.status(500).send("Error starting transaction");
+    }
+
+    try {
+      // Update task_description if provided
+      if (task_description !== undefined && task_description !== "") {
+        await query(queryIfDescription, descriptionValues);
+      }
+
+      // Update task_plan if provided
+      if (task_plan !== undefined && task_plan !== "") {
+        await query(queryIfPlan, planValues);
+      }
+
+      if (notes !== undefined && notes !== "") {
+        // Insert into task_note
+        await query(queryTaskNotes, taskNoteValues);
+      }
+
+      // Commit transaction
+      connection.commit((err) => {
+        if (err) {
+          console.error("Error committing transaction:", err);
+          return connection.rollback(() => {
+            res.status(500).send("Error committing transaction");
+          });
+        }
+        res.send("Task updated and note added successfully");
+      });
+    } catch (error) {
+      // Rollback transaction on error
+      console.error("Error processing transaction:", error);
+      connection.rollback(() => {
+        res.status(500).send("Error processing transaction");
+      });
+    }
+  });
+}
+
+async function rejectTaskWithStateChange(req, res) {
+  const {
+    task_id,
+    task_description,
+    task_plan,
+    task_state,
+    task_owner,
+    notes,
+  } = req.body;
+
+  console.log("I am task state " + task_state);
+
+  //const currentDateTime = new Date().toISOString();
+
+  const currentDateTime = new Date()
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+
+  const systemDateTime = new Date(Date.now() + 1000)
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+  console.log(currentDateTime);
+
+  // Define note messages based on task_state
+  const noteMessages = {
+    todo: `User ${task_owner} has given up task.`,
+    doing: `User ${task_owner} has rejected the task.`,
+  };
+
+  const newNote = `[System, ${task_state}] ${currentDateTime} ${
+    noteMessages[task_state] || "Task state updated."
+  }`;
+  console.log(noteMessages[task_state]);
+
+  console.log(newNote);
+
+  const queryIfDescription = `UPDATE task SET task_description = ? WHERE task_id = ?`;
+  const queryIfPlan = "UPDATE task SET task_plan = ? WHERE task_id = ?";
+  const querySetState =
+    "UPDATE task SET task_state = ?, task_owner = ? WHERE task_id = ?";
+  const queryTaskNotes = `INSERT INTO task_note (task_id, notes, tasknote_created) VALUES (?, ?, ?)`;
+
+  const descriptionValues = [task_description, task_id];
+  const planValues = [task_plan, task_id];
+  const stateValues = [task_state, task_owner, task_id];
+  const taskNoteValues = [task_id, notes, systemDateTime];
+  const taskSystemNoteValues = [task_id, newNote, currentDateTime];
+
+  connection.beginTransaction(async (err) => {
+    if (err) {
+      console.error("Error starting transaction:", err);
+      return res.status(500).send("Error starting transaction");
+    }
+
+    try {
+      // Update task_description if provided
+      if (task_description !== undefined && task_description !== "") {
+        await query(queryIfDescription, descriptionValues);
+      }
+
+      // Update task_plan if provided
+      if (task_plan !== undefined && task_plan !== "") {
+        await query(queryIfPlan, planValues);
+      }
+
+      // Update task_state
+      await query(querySetState, stateValues);
+
+      if (notes !== undefined && notes !== "") {
+        // Insert into task_note
+        await query(queryTaskNotes, taskNoteValues);
+      }
+
+      // Insert into task_note system message
+      await query(queryTaskNotes, taskSystemNoteValues);
+
+      // Commit transaction
+      connection.commit((err) => {
+        if (err) {
+          console.error("Error committing transaction:", err);
+          return connection.rollback(() => {
+            res.status(500).send("Error committing transaction");
+          });
+        }
+        res.send("Task updated and note added successfully");
+      });
+    } catch (error) {
+      // Rollback transaction on error
+      console.error("Error processing transaction:", error);
+      connection.rollback(() => {
+        res.status(500).send("Error processing transaction");
+      });
+    }
+  });
+}
+
 module.exports = {
   checkPL,
   checkPM,
@@ -851,4 +1106,7 @@ module.exports = {
   getAllTask,
   getTaskDetails,
   getAuditTrail,
+  updateTaskWithStateChange,
+  updateTaskNoStateChange,
+  rejectTaskWithStateChange,
 };

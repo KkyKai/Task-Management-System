@@ -20,6 +20,9 @@ const {
   getAllTask,
   getTaskDetails,
   getAuditTrail,
+  updateTaskWithStateChange,
+  updateTaskNoStateChange,
+  rejectTaskWithStateChange,
 } = require("../controllers/taskController");
 
 const jwt = require("jsonwebtoken");
@@ -107,5 +110,45 @@ router
 router
   .route("/getAuditTrail")
   .post(issDisabled, authenticateToken, getAuditTrail);
+
+router
+  .route("/updateTaskWithStateChangeOpen")
+  .post(issDisabled, checkOpenPermission, updateTaskWithStateChange);
+
+router
+  .route("/updateTaskWithStateChangeToDo")
+  .post(issDisabled, checkTodoPermission, updateTaskWithStateChange);
+
+router
+  .route("/updateTaskWithStateChangeDoing")
+  .post(issDisabled, checkDoingPermission, updateTaskWithStateChange);
+
+router
+  .route("/updateTaskWithStateChangeDone")
+  .post(issDisabled, checkDonePermission, updateTaskWithStateChange);
+
+router
+  .route("/updateTaskWithNoStateChangeOpen")
+  .post(issDisabled, checkOpenPermission, updateTaskNoStateChange);
+
+router
+  .route("/updateTaskWithNoStateChangeToDo")
+  .post(issDisabled, checkTodoPermission, updateTaskNoStateChange);
+
+router
+  .route("/updateTaskWithNoStateChangeDoing")
+  .post(issDisabled, checkDoingPermission, updateTaskNoStateChange);
+
+router
+  .route("/updateTaskWithNoStateChangeDone")
+  .post(issDisabled, checkDonePermission, updateTaskNoStateChange);
+
+router
+  .route("/rejectTaskWithStateChangeDoing")
+  .post(issDisabled, checkDoingPermission, rejectTaskWithStateChange);
+
+router
+  .route("/rejectTaskWithStateChangeDone")
+  .post(issDisabled, checkDoingPermission, rejectTaskWithStateChange);
 
 module.exports = router;

@@ -266,9 +266,15 @@ CREATE TABLE task_note (
     FOREIGN KEY (task_id) REFERENCES task (task_id)
 );
 
-select * from task;
-
 select * from task_note;
+
+INSERT INTO task_note (task_id, notes, tasknote_created)
+VALUES ('APP003_41', '\n This is a note for task 124.', '2024-08-12 14:30:01');
+
+
+select * from task_note where task_id = 'APP003_41' order by tasknote_created desc;
+
+select * from task_note order by tasknote_created desc;
 
 select * from application;
 

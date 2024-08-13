@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { UserContext } from "../login/UserContext";
 import Navbar from "../util/Navbar";
@@ -8,67 +8,66 @@ const TaskDetailsPage = () => {
   const { applicationName, taskId } = useParams();
   const { state } = useContext(UserContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [task, setTask] = useState({});
   const [newNote, setNewNote] = useState("");
-  const [canEditDescription, setCanEditDescription] = useState(false);
-  const [canEditPlan, setCanEditPlan] = useState(false);
-  const [canEditNotes, setCanEditNotes] = useState(false);
   const [planOptions, setPlanOptions] = useState([]);
   const [auditTrail, setAuditTrail] = useState([]);
 
+  const { canEditOpen, canEditToDo, canEditDoing, canEditDone } =
+    location.state || {};
+
+  const canEditDescription =
+    (task.task_state === "open" || task.task_state === "done") &&
+    (canEditOpen || canEditDone);
+
+  const canEditPlan =
+    (task.task_state === "open" || task.task_state === "done") &&
+    (canEditOpen || canEditDone);
+
+  const canAddNote =
+    (task.task_state === "open" && canEditOpen) ||
+    (task.task_state === "todo" && canEditToDo) ||
+    (task.task_state === "doing" && canEditDoing) ||
+    (task.task_state === "done" && canEditDone);
+
+  // Fetch task details, plan options, and audit trail
+  const fetchTaskDetails = async () => {
+    if (state.loading) return;
+    try {
+      // Fetch task details
+      const taskResponse = await axios.post(
+        "http://localhost:8080/getTaskDetails",
+        {
+          user: state.user,
+          task_id: taskId,
+        },
+        { withCredentials: true }
+      );
+      setTask(taskResponse.data);
+
+      // Fetch plan options
+      const planResponse = await axios.post(
+        "http://localhost:8080/getApplicationPlan",
+        { user: state.user, app_acronym: applicationName },
+        { withCredentials: true }
+      );
+      setPlanOptions(planResponse.data);
+
+      // Fetch audit trail
+      const auditTrailResponse = await axios.post(
+        "http://localhost:8080/getAuditTrail",
+        { user: state.user, task_id: taskId },
+        { withCredentials: true }
+      );
+      setAuditTrail(auditTrailResponse.data);
+    } catch (error) {
+      console.error("Error fetching task details:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchTaskDetails = async () => {
-      if (!state.user || state.loading) return;
-      try {
-        // Fetch task details
-        const taskResponse = await axios.post(
-          "http://localhost:8080/getTaskDetails",
-          {
-            user: state.user,
-            task_id: taskId,
-          },
-          { withCredentials: true }
-        );
-        setTask(taskResponse.data);
-
-        // Fetch plan options
-        const planResponse = await axios.post(
-          "http://localhost:8080/getApplicationPlan",
-          { user: state.user, app_acronym: applicationName },
-          { withCredentials: true }
-        );
-        setPlanOptions(planResponse.data);
-
-        // Fetch permissions
-        const openPermissionResponse = await axios.post(
-          "http://localhost:8080/getAppPermitOpen",
-          { user: state.user, app_acronym: applicationName },
-          { withCredentials: true }
-        );
-        setCanEditDescription(openPermissionResponse.data.hasPermission);
-        setCanEditPlan(openPermissionResponse.data.hasPermission);
-
-        // Fetch audit trail
-        const auditTrailResponse = await axios.post(
-          "http://localhost:8080/getAuditTrail",
-          { user: state.user, task_id: taskId },
-          { withCredentials: true }
-        );
-        setAuditTrail(auditTrailResponse.data);
-        console.log(auditTrailResponse);
-
-        const notesPermissionResponse = await axios.post(
-          "http://localhost:8080/getAppPermitNotes",
-          { user: state.user, app_acronym: applicationName },
-          { withCredentials: true }
-        );
-        setCanEditNotes(notesPermissionResponse.data.hasPermission);
-      } catch (error) {
-        console.error("Error fetching task details:", error);
-      }
-    };
-
     fetchTaskDetails();
   }, [applicationName, taskId, state.user, state.loading]);
 
@@ -76,24 +75,173 @@ const TaskDetailsPage = () => {
     navigate(-1); // Go back to the previous page
   };
 
-  const handleSave = async () => {
-    // Handle the save logic here
+  const handleUpdateDetails = async () => {
+    const routeMap = {
+      open: "/updateTaskWithNoStateChangeOpen",
+      todo: "/updateTaskWithNoStateChangeToDo",
+      doing: "/updateTaskWithNoStateChangeDoing",
+      done: "/updateTaskWithNoStateChangeDone",
+    };
+
+    const route = routeMap[task.task_state];
+
+    if (!route) {
+      console.error("Invalid task state");
+      return;
+    }
+
     try {
-      const updateResponse = await axios.post(
-        "http://localhost:8080/updateTaskDetails",
+      await axios.post(
+        `http://localhost:8080${route}`,
         {
+          user: state.user,
           task_id: taskId,
           task_app_Acronym: applicationName,
           task_description: task.task_description,
           task_plan: task.task_plan,
-          task_notes: `${task.task_notes}\n\n${newNote}`, // Append new note to existing notes
+          task_state: task.task_state,
+          task_owner: state.user,
+          notes: newNote,
         },
         { withCredentials: true }
       );
-      console.log("Update response:", updateResponse.data);
-      // Navigate back or show a success message
+      setNewNote("");
+      fetchTaskDetails(); // Refresh data after update
     } catch (error) {
       console.error("Error updating task details:", error);
+    }
+  };
+
+  const handleReleaseTask = async () => {
+    // Define the state transitions
+    const stateTransitions = {
+      open: "todo",
+      todo: "doing",
+      doing: "done",
+      done: "closed",
+    };
+
+    // Determine the new state
+    const newState = stateTransitions[task.task_state];
+
+    if (!newState) {
+      console.error("Invalid task state");
+      return;
+    }
+
+    // Define the routes for each state transition
+    const routeMap = {
+      open: "/updateTaskWithStateChangeOpen",
+      todo: "/updateTaskWithStateChangeToDo",
+      doing: "/updateTaskWithStateChangeDoing",
+      done: "/updateTaskWithStateChangeDone",
+    };
+
+    // Get the route based on the current task state
+    const route = routeMap[task.task_state];
+
+    if (!route) {
+      console.error("Invalid route for task state");
+      return;
+    }
+
+    try {
+      await axios.post(
+        `http://localhost:8080${route}`,
+        {
+          user: state.user,
+          task_id: taskId,
+          task_app_Acronym: applicationName,
+          task_description: task.task_description,
+          task_plan: task.task_plan,
+          task_state: newState,
+          task_owner: state.user,
+          notes: newNote,
+        },
+        { withCredentials: true }
+      );
+      setNewNote("");
+      fetchTaskDetails(); // Refresh data after release
+    } catch (error) {
+      console.error("Error releasing task:", error);
+    }
+  };
+
+  const handleGiveUpTask = async () => {
+    // Define the state transitions
+    const stateTransitions = {
+      doing: "todo",
+      done: "doing",
+    };
+
+    // Determine the new state
+    const newState = stateTransitions[task.task_state];
+
+    if (!newState) {
+      console.error("Invalid task state");
+      return;
+    }
+
+    // Define the routes for each state transition
+    const routeMap = {
+      doing: "/rejectTaskWithStateChangeDoing",
+      done: "/rejectTaskWithStateChangeDone",
+    };
+
+    // Get the route based on the current task state
+    const route = routeMap[task.task_state];
+
+    if (!route) {
+      console.error("Invalid route for task state");
+      return;
+    }
+
+    try {
+      await axios.post(
+        `http://localhost:8080${route}`,
+        {
+          user: state.user,
+          task_id: taskId,
+          task_app_Acronym: applicationName,
+          task_description: task.task_description,
+          task_plan: task.task_plan,
+          task_state: newState,
+          task_owner: state.user,
+          notes: newNote,
+        },
+        { withCredentials: true }
+      );
+      setNewNote("");
+      fetchTaskDetails(); // Refresh data after release
+    } catch (error) {
+      console.error("Error releasing task:", error);
+    }
+  };
+
+  // Determine the action button text based on task state
+  const getActionButtonText = () => {
+    switch (task.task_state) {
+      case "open":
+        return "Release Task";
+      case "todo":
+        return "Take On Task";
+      case "doing":
+        return "Submit Task for Review";
+      case "done":
+        return "Approve Task";
+      default:
+        return "";
+    }
+  };
+
+  const getRejectButtonText = () => {
+    switch (task.task_state) {
+      case "doing":
+        return "Give Up Task";
+      case "done":
+        return "Reject Task";
+      default:
+        return "";
     }
   };
 
@@ -108,47 +256,53 @@ const TaskDetailsPage = () => {
             <label className="block font-bold">Description:</label>
             {canEditDescription ? (
               <textarea
-                value={task.task_description}
+                value={task.task_description || ""}
                 onChange={(e) =>
                   setTask({ ...task, task_description: e.target.value })
                 }
                 className="w-full border rounded p-2"
               />
             ) : (
-              <p className="border rounded p-2">{task.task_description}</p>
+              <p className="border rounded p-2">
+                {task.task_description || "No description available"}
+              </p>
             )}
           </div>
 
           <div className="mb-4">
             <label className="block font-bold">Task ID:</label>
-            <p>{task.task_id}</p>
+            <p>{task.task_id || "No ID available"}</p>
           </div>
 
           <div className="mb-4">
             <label className="block font-bold">State:</label>
-            <p>{task.task_state}</p>
+            <p>{task.task_state || "No state available"}</p>
           </div>
 
           <div className="mb-4">
             <label className="block font-bold">Creator:</label>
-            <p>{task.task_creator}</p>
+            <p>{task.task_creator || "No creator available"}</p>
           </div>
 
           <div className="mb-4">
             <label className="block font-bold">Owner:</label>
-            <p>{task.task_owner}</p>
+            <p>{task.task_owner || "No owner available"}</p>
           </div>
 
           <div className="mb-4">
             <label className="block font-bold">Create Date:</label>
-            <p>{task.task_create_date}</p>
+            <p>
+              {task.task_createDate
+                ? new Date(task.task_createDate).toLocaleDateString()
+                : "No creation date available"}
+            </p>
           </div>
 
           <div className="mb-4">
             <label className="block font-bold">Plan:</label>
             {canEditPlan ? (
               <select
-                value={task.task_plan}
+                value={task.task_plan || ""}
                 onChange={(e) =>
                   setTask({ ...task, task_plan: e.target.value })
                 }
@@ -162,7 +316,9 @@ const TaskDetailsPage = () => {
                 ))}
               </select>
             ) : (
-              <p className="border rounded p-2">{task.task_plan}</p>
+              <p className="border rounded p-2">
+                {task.task_plan || "No plan available"}
+              </p>
             )}
           </div>
         </div>
@@ -190,37 +346,53 @@ const TaskDetailsPage = () => {
               )}
             </div>
 
-            <div className="mb-4">
-              <label className="block font-bold">Enter New Note:</label>
-              {canEditNotes ? (
-                <textarea
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  className="w-full border rounded p-2"
-                />
-              ) : (
-                <p className="border rounded p-2">
-                  You do not have permission to add notes.
-                </p>
-              )}
-            </div>
+            {canAddNote && (
+              <>
+                <div className="mb-4">
+                  <label className="block font-bold">Enter New Note:</label>
+                  <textarea
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    className="w-full border rounded p-2"
+                  />
+                </div>
+
+                <div className="flex justify-end mt-4">
+                  <button
+                    className="bg-gray-500 text-white px-4 py-2 rounded shadow-lg hover:bg-gray-600 mr-2"
+                    onClick={handleBack}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-600 mr-2"
+                    onClick={handleUpdateDetails}
+                  >
+                    Update Details
+                  </button>
+
+                  {(task.task_state === "doing" ||
+                    task.task_state === "done") && (
+                    <button
+                      className="bg-red-500 text-white px-4 py-2 rounded shadow-lg hover:bg-red-600 mr-2"
+                      onClick={handleGiveUpTask}
+                    >
+                      {getRejectButtonText()}
+                    </button>
+                  )}
+
+                  <button
+                    className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-green-600"
+                    onClick={handleReleaseTask}
+                  >
+                    {getActionButtonText()}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
-      </div>
-
-      <div className="flex justify-end mt-4">
-        <button
-          className="bg-gray-500 text-white px-4 py-2 rounded shadow-lg hover:bg-gray-600 mr-2"
-          onClick={handleBack}
-        >
-          Cancel
-        </button>
-        <button
-          className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-600"
-          onClick={handleSave}
-        >
-          Save
-        </button>
       </div>
     </div>
   );
