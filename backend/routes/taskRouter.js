@@ -36,7 +36,6 @@ const {
   checkTodoPermission,
   checkDoingPermission,
   checkDonePermission,
-  getPermit,
 } = require("../utils/permit");
 
 router
@@ -66,20 +65,12 @@ router
   .post(issDisabled, isAuthenticatedUser("projectmanager"), createPlan);
 
 router
-  .route("/getAllPlans")
-  .post(
-    issDisabled,
-    isAuthenticatedUser("projectmanager", "projectlead"),
-    getAllPlans
-  );
+  .route("/editPlan")
+  .post(issDisabled, isAuthenticatedUser("projectmanager"), editPlan);
 
 router
   .route("/getApplicationPlan")
   .post(issDisabled, authenticateToken, getApplicationPlan);
-
-router
-  .route("/editPlan")
-  .post(issDisabled, isAuthenticatedUser("projectmanager"), editPlan);
 
 router
   .route("/getAppPermitCreate")
@@ -100,16 +91,16 @@ router
 router.route("/getAllTask").post(issDisabled, authenticateToken, getAllTask);
 
 router
-  .route("/createTask")
-  .post(issDisabled, checkCreatePermission, createTask);
-
-router
   .route("/getTaskDetails")
   .post(issDisabled, authenticateToken, getTaskDetails);
 
 router
   .route("/getAuditTrail")
   .post(issDisabled, authenticateToken, getAuditTrail);
+
+router
+  .route("/createTask")
+  .post(issDisabled, checkCreatePermission, createTask);
 
 router
   .route("/updateTaskWithStateChangeOpen")
@@ -150,5 +141,13 @@ router
 router
   .route("/rejectTaskWithStateChangeDone")
   .post(issDisabled, checkDoingPermission, rejectTaskWithStateChange);
+
+/*router
+  .route("/getAllPlans")
+  .post(
+    issDisabled,
+    isAuthenticatedUser("projectmanager", "projectlead"),
+    getAllPlans
+  ); */
 
 module.exports = router;

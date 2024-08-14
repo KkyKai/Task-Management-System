@@ -14,7 +14,7 @@ const Application = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (state.loading) return; // Return early if user data is still loading
+    if (state.loading || !state.user) return; // Ensure user is available
 
     const fetchAuthStatus = async () => {
       try {
@@ -28,13 +28,16 @@ const Application = () => {
       } catch (error) {
         console.error("Failed to fetch authentication status", error);
         setIsProjectLead(false);
+        setError("Failed to check if authorised. Please try again.");
       }
     };
 
     fetchAuthStatus();
-  }, []);
+  }, [state.loading, state.user]);
 
   useEffect(() => {
+    if (!state.user || state.loading) return;
+
     const fetchData = async () => {
       try {
         const response = await axios.post(
@@ -56,6 +59,9 @@ const Application = () => {
     <div className="container mx-auto p-4">
       <Navbar />
       <h1 className="text-2xl font-bold mb-4">Applications</h1>
+      {error && (
+        <div className="bg-red-100 text-red-800 p-4 rounded mb-4">{error}</div>
+      )}
       {isProjectLead && (
         <div className="flex justify-end mb-4">
           <button

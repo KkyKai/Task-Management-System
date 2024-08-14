@@ -6,6 +6,8 @@ const util = require("util");
 
 const { Checkgroup } = require("../models/accounts.js");
 
+const sendEmail = require("../utils/emailService.js");
+
 const query = util.promisify(connection.query).bind(connection);
 
 const checkPL = async (req, res) => {
@@ -55,16 +57,55 @@ async function createApplication(req, res) {
     app_rnumber,
     app_startdate,
     app_enddate,
-    permissions,
-  } = req.body;
-
-  const {
     app_permit_create,
     app_permit_open,
     app_permit_todolist,
     app_permit_doing,
     app_permit_done,
-  } = permissions;
+  } = req.body;
+
+  if (!app_acronym) {
+    return res.status(400).send("App Acronym is required");
+  }
+
+  const trimmedAcronym = app_acronym.trim();
+  if (trimmedAcronym.length < 4 || trimmedAcronym.length > 20) {
+    return res
+      .status(400)
+      .send("App Acronym length must be between 4 and 20 characters");
+  }
+
+  const invalidCharPattern = /[^a-zA-Z0-9_]/;
+  if (invalidCharPattern.test(trimmedAcronym)) {
+    return res
+      .status(400)
+      .send(
+        "App Acronym should contain only letters, numbers, underscores, and no white space inbetween"
+      );
+  }
+
+  // Process the valid app_acronym
+  const processedAcronym = trimmedAcronym.toLowerCase();
+
+  if (!app_rnumber) {
+    return res.status(400).send("App Rnumber is required");
+  }
+
+  if (app_rnumber < 0) {
+    return res.status(400).send("App Rnumber must be a non-negative number");
+  }
+
+  if (!app_startdate) {
+    return res.status(400).send("App Start Date is required");
+  }
+
+  if (!app_enddate) {
+    return res.status(400).send("App End Date is required");
+  }
+
+  if (app_startdate > app_enddate) {
+    return res.status(400).send("App Start Date cannot be after App End Date");
+  }
 
   // Prepare the SQL query and values
   const query = `
@@ -83,16 +124,16 @@ async function createApplication(req, res) {
     `;
 
   const values = [
-    app_acronym,
-    app_description !== undefined ? app_description : null,
+    processedAcronym,
+    app_description,
     app_rnumber,
     app_startdate,
     app_enddate,
-    app_permit_create !== undefined ? app_permit_create : null,
-    app_permit_open !== undefined ? app_permit_open : null,
-    app_permit_todolist !== undefined ? app_permit_todolist : null,
-    app_permit_doing !== undefined ? app_permit_doing : null,
-    app_permit_done !== undefined ? app_permit_done : null,
+    app_permit_create,
+    app_permit_open,
+    app_permit_todolist,
+    app_permit_doing,
+    app_permit_done,
   ];
 
   // Start a transaction
@@ -105,7 +146,11 @@ async function createApplication(req, res) {
     try {
       connection.query(query, values, (error, results) => {
         if (error) {
-          // Rollback transaction on error
+          if (error.code === "ER_DUP_ENTRY") {
+            return connection.rollback(() => {
+              res.status(400).send("App Acronym already exists");
+            });
+          }
           return connection.rollback(() => {
             console.error("Error querying database:", error);
             res.status(500).send("Error querying database");
@@ -165,50 +210,70 @@ async function editApplication(req, res) {
   const {
     app_acronym,
     app_description,
-    app_rnumber,
     app_startdate,
     app_enddate,
-    permissions,
-  } = req.body;
-
-  const {
     app_permit_create,
     app_permit_open,
     app_permit_todolist,
     app_permit_doing,
     app_permit_done,
-  } = permissions;
+  } = req.body;
 
-  console.log(app_acronym);
+  if (app_startdate || app_enddate) {
+    if (app_startdate > app_enddate) {
+      return res
+        .status(400)
+        .send("App Start Date cannot be after App End Date");
+    }
+  }
 
-  // Prepare the SQL query and values
+  const setClause = [];
+  const values = [];
+
+  if (app_description !== undefined) {
+    setClause.push("app_description = ?");
+    values.push(app_description);
+  }
+  if (app_startdate !== undefined) {
+    setClause.push("app_startdate = ?");
+    values.push(app_startdate);
+  }
+  if (app_enddate !== undefined) {
+    setClause.push("app_enddate = ?");
+    values.push(app_enddate);
+  }
+  if (app_permit_create !== undefined) {
+    setClause.push("app_permit_create = ?");
+    values.push(app_permit_create);
+  }
+  if (app_permit_open !== undefined) {
+    setClause.push("app_permit_open = ?");
+    values.push(app_permit_open);
+  }
+  if (app_permit_todolist !== undefined) {
+    setClause.push("app_permit_todolist = ?");
+    values.push(app_permit_todolist);
+  }
+  if (app_permit_doing !== undefined) {
+    setClause.push("app_permit_doing = ?");
+    values.push(app_permit_doing);
+  }
+  if (app_permit_done !== undefined) {
+    setClause.push("app_permit_done = ?");
+    values.push(app_permit_done);
+  }
+
+  if (setClause.length === 0) {
+    return res.status(400).send("No fields to update");
+  }
+
+  // Final query string
   const query = `
-        UPDATE application
-        SET
-            app_description = ?, 
-            app_rnumber = ?, 
-            app_startdate = ?, 
-            app_enddate = ?, 
-            app_permit_create = ?, 
-            app_permit_open = ?, 
-            app_permit_todolist = ?, 
-            app_permit_doing = ?, 
-            app_permit_done = ?
-        WHERE app_acronym = ?
-    `;
-
-  const values = [
-    app_description !== undefined ? app_description : null,
-    app_rnumber,
-    app_startdate,
-    app_enddate,
-    app_permit_create !== undefined ? app_permit_create : null,
-    app_permit_open !== undefined ? app_permit_open : null,
-    app_permit_todolist !== undefined ? app_permit_todolist : null,
-    app_permit_doing !== undefined ? app_permit_doing : null,
-    app_permit_done !== undefined ? app_permit_done : null,
-    app_acronym,
-  ];
+    UPDATE application
+    SET ${setClause.join(", ")}
+    WHERE app_acronym = ?
+  `;
+  values.push(app_acronym);
 
   // Start a transaction
   connection.beginTransaction(async (err) => {
@@ -260,6 +325,30 @@ async function createPlan(req, res) {
     return res.status(400).send("Missing required fields.");
   }
 
+  const trimmedPlanMVPName = plan_MVP_name.trim().toLowerCase();
+  const nameLength = trimmedPlanMVPName.length;
+  const namePattern = /^[a-zA-Z0-9_ ]+$/;
+
+  if (nameLength < 4 || nameLength > 20) {
+    return res
+      .status(400)
+      .send("plan_MVP_name must be between 4 and 20 characters.");
+  }
+
+  if (!namePattern.test(trimmedPlanMVPName)) {
+    return res
+      .status(400)
+      .send(
+        "plan_MVP_name can only contain alphanumeric characters, underscores, and spaces."
+      );
+  }
+
+  if (plan_startDate && plan_endDate) {
+    if (plan_startDate > plan_endDate) {
+      return res.status(400).send("Start Date cannot be after End Date");
+    }
+  }
+
   // Prepare the SQL query and values
   const query = `
         INSERT INTO plan (
@@ -271,7 +360,7 @@ async function createPlan(req, res) {
     `;
 
   const values = [
-    plan_MVP_name,
+    trimmedPlanMVPName,
     plan_startDate,
     plan_endDate,
     plan_app_Acronym,
@@ -287,7 +376,11 @@ async function createPlan(req, res) {
     try {
       connection.query(query, values, (error, results) => {
         if (error) {
-          // Rollback transaction on error
+          if (error.code === "ER_DUP_ENTRY") {
+            return connection.rollback(() => {
+              res.status(400).send("Plan MVP name already exists");
+            });
+          }
           return connection.rollback(() => {
             console.error("Error querying database:", error);
             res.status(500).send("Error querying database");
@@ -368,6 +461,21 @@ async function editPlan(req, res) {
 
   console.log(plan_MVP_name, plan_app_Acronym);
 
+  const formatDate = (date) => {
+    if (!date) return null;
+    const d = new Date(date);
+    return d.toISOString().split("T")[0]; // Only keep 'YYYY-MM-DD'
+  };
+
+  const startDateFormatted = formatDate(plan_startDate);
+  const endDateFormatted = formatDate(plan_endDate);
+
+  if (startDateFormatted && endDateFormatted) {
+    if (startDateFormatted > endDateFormatted) {
+      return res.status(400).send("Start Date cannot be after End Date");
+    }
+  }
+
   // Prepare the SQL query and values
   const query = `
     UPDATE plan
@@ -378,8 +486,8 @@ async function editPlan(req, res) {
   `;
 
   const values = [
-    plan_startDate !== undefined ? plan_startDate : null,
-    plan_endDate !== undefined ? plan_endDate : null,
+    startDateFormatted,
+    endDateFormatted,
     plan_MVP_name,
     plan_app_Acronym,
   ];
@@ -916,6 +1024,14 @@ async function updateTaskWithStateChange(req, res) {
             res.status(500).send("Error committing transaction");
           });
         }
+
+        /*// Send email notification
+        / Retrieve group name for the current task state from `application`
+  const queryGetGroupName = `SELECT app_permit_done AS groupname FROM application WHERE app_acronym = ?`;
+        const subject = `Task ${task_state} Update`;
+        const text = `Task ID: ${task_id}\nTask Description: ${task_description}\nTask Plan: ${task_plan}\nTask State: ${task_state}\nTask Owner: ${task_owner}\nNotes: ${notes}`;
+        await sendEmail(task_owner, subject, text); // Assuming task_owner is an email address */
+
         res.send("Task updated and note added successfully");
       });
     } catch (error) {
@@ -1084,6 +1200,23 @@ async function rejectTaskWithStateChange(req, res) {
       });
     }
   });
+}
+
+async function getUserEmailsByGroupName(groupname) {
+  const sql = `
+    SELECT u.email
+    FROM usergroup ug
+    JOIN user u ON ug.userID = u.username
+    WHERE ug.groupname = ?;
+  `;
+
+  try {
+    const [results] = await query(sql, [groupname]);
+    return results.map((user) => user.email); // Return an array of email addresses
+  } catch (error) {
+    console.error("Error fetching user emails:", error);
+    throw error;
+  }
 }
 
 module.exports = {

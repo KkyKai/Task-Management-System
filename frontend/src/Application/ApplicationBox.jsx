@@ -1,8 +1,12 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "../login/UserContext";
 
 const ApplicationBox = ({ name, isProjectLead }) => {
+  const { state } = useContext(UserContext);
   const navigate = useNavigate();
+
+  if (state.loading || !state.user) return; // Ensure user is available
 
   // Function to handle the redirection when the box is clicked
   const handleClick = () => {

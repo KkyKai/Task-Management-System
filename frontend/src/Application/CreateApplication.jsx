@@ -5,7 +5,7 @@ import axios from "axios";
 import Navbar from "../util/Navbar";
 
 const CreateApplication = () => {
-  const { state, dispatch } = useContext(UserContext);
+  const { state } = useContext(UserContext);
   const [acronym, setAcronym] = useState("");
   const [description, setDescription] = useState("");
   const [rnumber, setRnumber] = useState("");
@@ -18,10 +18,13 @@ const CreateApplication = () => {
     app_permit_doing: "",
     app_permit_done: "",
   });
-  const [groups, setGroups] = useState([]); // New state for groups
+  const [groups, setGroups] = useState([]);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!state.user || state.loading) return;
     // Fetch groups on component mount
     const fetchGroups = async () => {
       try {
@@ -37,33 +40,24 @@ const CreateApplication = () => {
     };
 
     fetchGroups();
-  }, [state.user]);
+  }, [state.user, state.loading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Clear previous success message
+    setSuccessMessage("");
+
     const processedPermissions = {
-      app_permit_create:
-        permissions.app_permit_create.trim() === ""
-          ? null
-          : permissions.app_permit_create,
-      app_permit_open:
-        permissions.app_permit_open.trim() === ""
-          ? null
-          : permissions.app_permit_open,
+      app_permit_create: (permissions.app_permit_create || "").trim() || null,
+      app_permit_open: (permissions.app_permit_open || "").trim() || null,
       app_permit_todolist:
-        permissions.app_permit_todolist.trim() === ""
-          ? null
-          : permissions.app_permit_todolist,
-      app_permit_doing:
-        permissions.app_permit_doing.trim() === ""
-          ? null
-          : permissions.app_permit_doing,
-      app_permit_done:
-        permissions.app_permit_done.trim() === ""
-          ? null
-          : permissions.app_permit_done,
+        (permissions.app_permit_todolist || "").trim() || null,
+      app_permit_doing: (permissions.app_permit_doing || "").trim() || null,
+      app_permit_done: (permissions.app_permit_done || "").trim() || null,
     };
+
+    //console.log(...processedPermissions);
 
     // Logging the current state for debugging
     console.log({
@@ -72,7 +66,7 @@ const CreateApplication = () => {
       rnumber,
       startDate,
       endDate,
-      permissions: processedPermissions,
+      ...processedPermissions,
     });
 
     try {
@@ -86,13 +80,35 @@ const CreateApplication = () => {
           app_rnumber: rnumber,
           app_startdate: startDate,
           app_enddate: endDate,
-          permissions: processedPermissions,
+          ...processedPermissions,
         },
         { withCredentials: true }
       );
+
+      console.log("Application created successfully:", response.data);
+      setSuccessMessage("Application created successfully!");
+
+      setAcronym("");
+      setDescription("");
+      setRnumber("");
+      setStartDate("");
+      setEndDate("");
+      setPermissions({
+        app_permit_create: "",
+        app_permit_open: "",
+        app_permit_todolist: "",
+        app_permit_doing: "",
+        app_permit_done: "",
+      });
+      setError("");
     } catch (error) {
       // Handle errors
-      console.error("Error updating user information:", error);
+      if (error.response && error.response.data) {
+        setError(error.response.data); // Capture the plain text error message
+      } else {
+        setError("An unexpected error occurred"); // Default error message
+      }
+      console.error("Error creating application:", error);
     }
   };
 
@@ -108,6 +124,14 @@ const CreateApplication = () => {
       <h1 className="text-2xl font-bold mb-6 text-center">
         Create Application
       </h1>
+      {successMessage && (
+        <div className="mb-4 p-4 bg-green-200 text-green-800 rounded">
+          {successMessage}
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 p-4 bg-red-200 text-red-800 rounded">{error}</div>
+      )}
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
           {/* Column 1: General Information */}
@@ -171,15 +195,17 @@ const CreateApplication = () => {
                   </label>
                   <select
                     className="w-full p-2 border border-gray-300 rounded"
-                    value={permissions[`app_permit_${permission}`]}
-                    onChange={(e) =>
+                    value={permissions[`app_permit_${permission}`] || ""}
+                    onChange={(e) => {
+                      const selectedValue = e.target.value || null; // Set to null if empty string
                       setPermissions({
                         ...permissions,
-                        [`app_permit_${permission}`]: e.target.value,
-                      })
-                    }
+                        [`app_permit_${permission}`]: selectedValue,
+                      });
+                    }}
                   >
-                    <option>Select Group</option>
+                    <option value="">Select Group</option>{" "}
+                    {/* Default option */}
                     {groups.map((group) => (
                       <option key={group} value={group}>
                         {group}

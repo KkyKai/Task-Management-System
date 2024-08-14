@@ -21,8 +21,12 @@ const EditApplication = () => {
   });
   const [groups, setGroups] = useState([]);
   const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
+    if (!state.user || state.loading) return;
+
     const fetchGroups = async () => {
       try {
         const groupsResponse = await axios.post(
@@ -61,40 +65,37 @@ const EditApplication = () => {
         });
       } catch (error) {
         console.error("Error fetching application data:", error);
+        setError("Error fetching application details");
       }
     };
 
     fetchGroups();
     fetchApplicationData();
-  }, [name, state.user]);
+  }, [name, state.user, state.loading]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log(acronym);
+    // Clear previous success and error messages
+    setSuccessMessage("");
+    setError("");
 
     const processedPermissions = {
-      app_permit_create:
-        permissions.app_permit_create.trim() === ""
-          ? null
-          : permissions.app_permit_create,
-      app_permit_open:
-        permissions.app_permit_open.trim() === ""
-          ? null
-          : permissions.app_permit_open,
+      app_permit_create: (permissions.app_permit_create || "").trim() || null,
+      app_permit_open: (permissions.app_permit_open || "").trim() || null,
       app_permit_todolist:
-        permissions.app_permit_todolist.trim() === ""
-          ? null
-          : permissions.app_permit_todolist,
-      app_permit_doing:
-        permissions.app_permit_doing.trim() === ""
-          ? null
-          : permissions.app_permit_doing,
-      app_permit_done:
-        permissions.app_permit_done.trim() === ""
-          ? null
-          : permissions.app_permit_done,
+        (permissions.app_permit_todolist || "").trim() || null,
+      app_permit_doing: (permissions.app_permit_doing || "").trim() || null,
+      app_permit_done: (permissions.app_permit_done || "").trim() || null,
     };
+
+    console.log({
+      acronym,
+      description,
+      startDate,
+      endDate,
+      ...processedPermissions,
+    });
 
     try {
       await axios.post(
@@ -103,14 +104,23 @@ const EditApplication = () => {
           user: state.user,
           app_acronym: acronym,
           app_description: description,
-          app_rnumber: rnumber,
           app_startdate: startDate,
           app_enddate: endDate,
-          permissions: processedPermissions,
+          ...processedPermissions,
         },
         { withCredentials: true }
       );
+
+      setSuccessMessage("Application edited successfully!");
+
+      // Redirect to /landing on successful edit
+      //navigate("/landing");
     } catch (error) {
+      if (error.response && error.response.data) {
+        setError(error.response.data); // Capture and display the backend error message
+      } else {
+        setError("An unexpected error occurred"); // Default error message
+      }
       console.error("Error updating application:", error);
     }
   };
@@ -125,6 +135,14 @@ const EditApplication = () => {
         &lt;- Back
       </button>
       <h1 className="text-2xl font-bold mb-6 text-center">Edit Application</h1>
+      {successMessage && (
+        <div className="mb-4 p-4 bg-green-200 text-green-800 rounded">
+          {successMessage}
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 p-4 bg-red-200 text-red-800 rounded">{error}</div>
+      )}
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
           <div className="space-y-6">
@@ -151,9 +169,7 @@ const EditApplication = () => {
                 type="number"
                 className="w-full p-2 border border-gray-300 rounded"
                 value={rnumber}
-                onChange={(e) => setRnumber(e.target.value)}
-                min="0"
-                step="1"
+                readOnly
               />
             </div>
             <div>
@@ -185,15 +201,17 @@ const EditApplication = () => {
                   </label>
                   <select
                     className="w-full p-2 border border-gray-300 rounded"
-                    value={permissions[`app_permit_${permission}`]}
-                    onChange={(e) =>
+                    value={permissions[`app_permit_${permission}`] || ""}
+                    onChange={(e) => {
+                      const selectedValue = e.target.value || null; // Set to null if empty string
                       setPermissions({
                         ...permissions,
-                        [`app_permit_${permission}`]: e.target.value,
-                      })
-                    }
+                        [`app_permit_${permission}`]: selectedValue,
+                      });
+                    }}
                   >
-                    <option>Select Group</option>
+                    <option value="">Select Group</option>{" "}
+                    {/* Default option */}
                     {groups.map((group) => (
                       <option key={group} value={group}>
                         {group}

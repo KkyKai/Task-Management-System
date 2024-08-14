@@ -12,6 +12,8 @@ const CreatePlanPage = () => {
   const location = useLocation();
   const { state } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const { applicationName } = location.state || {};
 
@@ -30,6 +32,12 @@ const CreatePlanPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Clear previous success message
+    setSuccessMessage("");
+    // Clear error message
+    setError("");
+
     // Handle form submission logic here
     console.log("Plan Name:", planName);
     console.log("Start Date:", startDate);
@@ -52,9 +60,20 @@ const CreatePlanPage = () => {
       .then((response) => {
         // Handle success
         console.log(response.data);
+        // Reset form fields
+        setPlanName("");
+        setStartDate("");
+        setEndDate("");
+
+        setSuccessMessage("Plan successfully created!");
       })
       .catch((error) => {
         // Handle error
+        if (error.response && error.response.data) {
+          setError(error.response.data); // Set the error message from the response
+        } else {
+          setError("An unexpected error occurred."); //
+        }
         console.error(error);
       });
   };
@@ -75,6 +94,14 @@ const CreatePlanPage = () => {
         </button>
         <h1 className="text-3xl font-bold text-center w-full">Create Plan</h1>
       </div>
+      {successMessage && (
+        <div className="bg-green-200 text-green-800 p-4 rounded mb-4">
+          {successMessage}
+        </div>
+      )}
+      {error && (
+        <div className="bg-red-200 text-red-800 p-4 rounded mb-4">{error}</div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
         <div>
           <label className="block text-xl font-medium" htmlFor="planName">

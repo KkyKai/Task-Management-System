@@ -278,6 +278,12 @@ select * from task_note order by tasknote_created desc;
 
 select * from application;
 
+
+select * from plan;
+select app_permit_open from application WHERE app_acronym = 'test1';
+
+select * from application WHERE app_acronym = 'test1' AND app_permit_open = '';
+
 select * from usergroup;
 
 SELECT * FROM task where task_app_Acronym = 'APP003';

@@ -82,22 +82,32 @@ const PlanManagementPage = () => {
         )
       );
       setEditingPlanId(null);
+      setError(null);
     } catch (err) {
-      setError("Error updating plan");
+      if (err.response && err.response.data) {
+        setError(err.response.data);
+      } else {
+        setError("Error updating plan");
+      }
       console.error("Error updating plan:", err);
     }
   };
 
   const handleCancel = () => {
     setEditingPlanId(null);
+    setError(null);
   };
 
   if (state.loading) return <div>Loading user data...</div>;
   if (loading) return <div>Loading plans...</div>;
-  if (error) return <div>{error}</div>;
 
   return (
     <div className="container mx-auto p-4">
+      {error && (
+        <div className="bg-red-100 text-red-700 border border-red-400 p-4 rounded mb-4">
+          {error}
+        </div>
+      )}
       <div className="flex justify-between items-center mb-4">
         <button
           className="bg-gray-200 text-black px-4 py-2 rounded shadow-lg hover:bg-gray-300"
