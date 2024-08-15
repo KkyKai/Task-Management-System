@@ -277,7 +277,7 @@ select * from task_note where task_id = 'APP003_41' order by tasknote_created de
 select * from task_note order by tasknote_created desc;
 
 select * from application;
-
+SELECT * FROM task;
 
 select * from plan;
 select app_permit_open from application WHERE app_acronym = 'test1';
@@ -286,9 +286,18 @@ select * from application WHERE app_acronym = 'test1' AND app_permit_open = '';
 
 select * from usergroup;
 
+SELECT * FROM USER;
+
 SELECT * FROM task where task_app_Acronym = 'APP003';
 
 SELECT * FROM task where task_id = 'APP003_40';
+
+SELECT app_permit_done FROM application WHERE app_acronym = 'APP003';
+
+    SELECT u.email
+    FROM usergroup ug
+    JOIN user u ON ug.userID = u.username
+    WHERE ug.groupname = 'projectlead' AND u.email != '-';
 
 
 

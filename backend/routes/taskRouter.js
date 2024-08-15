@@ -23,6 +23,7 @@ const {
   updateTaskWithStateChange,
   updateTaskNoStateChange,
   rejectTaskWithStateChange,
+  groupnametest,
 } = require("../controllers/taskController");
 
 const jwt = require("jsonwebtoken");
@@ -140,7 +141,9 @@ router
 
 router
   .route("/rejectTaskWithStateChangeDone")
-  .post(issDisabled, checkDoingPermission, rejectTaskWithStateChange);
+  .post(issDisabled, checkDonePermission, rejectTaskWithStateChange);
+
+router.route("/grptest").post(groupnametest);
 
 /*router
   .route("/getAllPlans")

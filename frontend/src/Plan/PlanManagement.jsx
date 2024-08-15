@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../login/UserContext";
 import axios from "axios";
+import Navbar from "../util/Navbar";
 
 const PlanManagementPage = () => {
   const { state } = useContext(UserContext);
@@ -103,6 +104,7 @@ const PlanManagementPage = () => {
 
   return (
     <div className="container mx-auto p-4">
+      <Navbar />
       {error && (
         <div className="bg-red-100 text-red-700 border border-red-400 p-4 rounded mb-4">
           {error}

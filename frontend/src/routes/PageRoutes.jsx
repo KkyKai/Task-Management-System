@@ -76,12 +76,17 @@ function PageRoutes() {
           }
         />
 
-        <Route
+        <Route path="/applications/tasks" element={<TaskDetailsPage />} />
+
+        {/* 
+                <Route
           path="/applications/:applicationName/tasks/:taskId"
           element={<TaskDetailsPage />}
         />
-
-        {/* <Route
+        
+        
+        
+        <Route
           path="/usermanagement"
           element={<ProtectedRoute element={UserManagement} />}
         />

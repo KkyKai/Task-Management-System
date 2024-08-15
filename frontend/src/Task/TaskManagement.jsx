@@ -143,9 +143,23 @@ const TaskManagementPage = () => {
     fetchData();
   }, [state.loading, applicationName]);
 
-  const handleTaskClick = (taskId) => {
+  /* const handleTaskClick = (taskId) => {
     navigate(`/applications/${applicationName}/tasks/${taskId}`, {
       state: {
+        taskId: taskId,
+        applicationName: applicationName,
+        canEditOpen: canEditOpen,
+        canEditToDo: canEditToDo,
+        canEditDoing: canEditDoing,
+        canEditDone: canEditDone,
+      },
+    });
+  }; */
+
+  const handleTaskClick = (taskId) => {
+    navigate(`/applications/tasks`, {
+      state: {
+        taskId: taskId,
         applicationName: applicationName,
         canEditOpen: canEditOpen,
         canEditToDo: canEditToDo,
@@ -163,15 +177,12 @@ const TaskManagementPage = () => {
     });
   };
 
-  /* const handleReviewTask = (taskId, e) => {
-    e.stopPropagation();
-    navigate(`/applications/${applicationName}/tasks/${taskId}`);
-  }; */
-
   const handleReviewTask = (taskId, e) => {
     e.stopPropagation();
-    navigate(`/applications/${applicationName}/tasks/${taskId}`, {
+    navigate(`/applications/tasks`, {
       state: {
+        taskId: taskId,
+        applicationName: applicationName,
         applicationName: applicationName,
         canEditOpen: canEditOpen,
         canEditToDo: canEditToDo,

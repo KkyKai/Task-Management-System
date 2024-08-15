@@ -1,4 +1,3 @@
-// emailService.js
 const nodemailer = require("nodemailer");
 
 // Create a transporter object using SMTP transport
@@ -21,9 +20,9 @@ async function sendEmail(to, subject, text) {
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully");
+    console.log("Email sent successfully to", to);
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("Error sending email to", to, ":", error);
   }
 }
 

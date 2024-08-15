@@ -35,13 +35,12 @@ const checkPermission = (permitType) => {
       const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
       req.user = decoded.payload.user;
 
-      console.log(req.user);
+      //console.log(req.user);
 
-      // Replace 'app_acronym' with the actual acronym you need, e.g., from req.body or another source
       const acronym = req.body.task_app_Acronym;
 
       console.log(acronym);
-      console.log(permitType);
+      //console.log(permitType);
 
       // Fetch the relevant permit information
       const permit = await getPermit(permitType, acronym);

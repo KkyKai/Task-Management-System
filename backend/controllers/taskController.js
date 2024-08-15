@@ -939,7 +939,34 @@ async function getAuditTrail(req, res) {
   }
 }
 
-async function updateTaskWithStateChange(req, res) {
+async function getUserEmailsByGroupName(groupname) {
+  const sql = `
+    SELECT u.email
+    FROM usergroup ug
+    JOIN user u ON ug.userID = u.username
+    WHERE ug.groupname = ? AND u.email != '-';
+  `;
+
+  try {
+    // Execute the query and get the results
+    const rows = await query(sql, [groupname]);
+
+    console.log("Query results:", rows);
+
+    // Check if rows is an array and map to get emails
+    if (Array.isArray(rows)) {
+      return rows.map((user) => user.email);
+    } else {
+      console.error("Unexpected result format:", rows);
+      return [];
+    }
+  } catch (error) {
+    console.error("Error fetching user emails:", error);
+    throw error;
+  }
+}
+
+/*async function updateTaskWithStateChange(req, res) {
   const {
     task_id,
     task_description,
@@ -947,11 +974,11 @@ async function updateTaskWithStateChange(req, res) {
     task_state,
     task_owner,
     notes,
+    app_acronym,
+    task_name,
   } = req.body;
 
-  console.log(task_owner);
-
-  //const currentDateTime = new Date().toISOString();
+  console.log("in update task" + app_acronym);
 
   const currentDateTime = new Date()
     .toISOString()
@@ -1016,6 +1043,26 @@ async function updateTaskWithStateChange(req, res) {
       // Insert into task_note system message
       await query(queryTaskNotes, taskSystemNoteValues);
 
+      // Send email notification
+
+      if (task_state === "done") {
+        const queryGetGroupName = `SELECT app_permit_done FROM application WHERE app_acronym = ?`;
+        const results = await query(queryGetGroupName, [app_acronym]);
+        const groupname = results[0]?.app_permit_done;
+
+        if (groupname) {
+          const subject = `Task ${task_name} Done`;
+          const text = `Task Name: ${task_name} has been completed. Please Review.`;
+          console.log(subject);
+          console.log(text);
+
+          const emails = await getUserEmailsByGroupName(groupname);
+
+          console.log(emails);
+          await sendEmail(emails, subject, text);
+        }
+      }
+
       // Commit transaction
       connection.commit((err) => {
         if (err) {
@@ -1025,15 +1072,167 @@ async function updateTaskWithStateChange(req, res) {
           });
         }
 
-        /*// Send email notification
-        / Retrieve group name for the current task state from `application`
-  const queryGetGroupName = `SELECT app_permit_done AS groupname FROM application WHERE app_acronym = ?`;
-        const subject = `Task ${task_state} Update`;
-        const text = `Task ID: ${task_id}\nTask Description: ${task_description}\nTask Plan: ${task_plan}\nTask State: ${task_state}\nTask Owner: ${task_owner}\nNotes: ${notes}`;
-        await sendEmail(task_owner, subject, text); // Assuming task_owner is an email address */
-
         res.send("Task updated and note added successfully");
       });
+    } catch (error) {
+      // Rollback transaction on error
+      console.error("Error processing transaction:", error);
+      connection.rollback(() => {
+        res.status(500).send("Error processing transaction");
+      });
+    }
+  });
+} */
+
+async function updateTaskWithStateChange(req, res) {
+  const {
+    task_id,
+    task_description,
+    task_plan,
+    task_state,
+    task_owner,
+    notes,
+    task_app_Acronym,
+    task_name,
+  } = req.body;
+
+  const currentDateTime = new Date()
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+
+  const systemDateTime = new Date(Date.now() + 1000)
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+  //console.log(currentDateTime);
+
+  // Define note messages based on task_state
+  const noteMessages = {
+    todo: `User ${task_owner} has released task.`,
+    doing: `User ${task_owner} has taken on task.`,
+    done: `User ${task_owner} has submitted task.`,
+    closed: `User ${task_owner} has closed task.`,
+  };
+
+  const newNote = `[System, ${task_state}] ${currentDateTime} ${
+    noteMessages[task_state] || "Task state updated."
+  }`;
+
+  const queryGetCurrentState = `SELECT task_state FROM task WHERE task_id = ?`;
+  const queryIfDescription = `UPDATE task SET task_description = ? WHERE task_id = ?`;
+  const queryIfPlan = "UPDATE task SET task_plan = ? WHERE task_id = ?";
+  const querySetState =
+    "UPDATE task SET task_state = ?, task_owner = ? WHERE task_id = ?";
+  const queryTaskNotes = `INSERT INTO task_note (task_id, notes, tasknote_created) VALUES (?, ?, ?)`;
+
+  const descriptionValues = [task_description, task_id];
+  const planValues = [task_plan, task_id];
+  const stateValues = [task_state, task_owner, task_id];
+  const taskNoteValues = [task_id, notes, systemDateTime];
+  const taskSystemNoteValues = [task_id, newNote, currentDateTime];
+
+  connection.beginTransaction(async (err) => {
+    if (err) {
+      console.error("Error starting transaction:", err);
+      return res.status(500).send("Error starting transaction");
+    }
+
+    try {
+      // Fetch current task state
+      const [currentStateResult] = await query(queryGetCurrentState, [task_id]);
+      const currentTaskState = currentStateResult?.task_state;
+
+      //console.log("current task state " + currentTaskState);
+
+      // Define valid state transitions
+      const validTransitions = {
+        open: ["todo"],
+        todo: ["doing"],
+        doing: ["done"],
+        done: ["closed"],
+      };
+
+      // Check if the transition is valid
+      if (
+        validTransitions[currentTaskState] &&
+        validTransitions[currentTaskState].includes(task_state)
+      ) {
+        // Update task_description if provided
+        /*if (task_description !== undefined && task_description !== "") {
+          await query(queryIfDescription, descriptionValues);
+        }
+
+        // Update task_plan if provided
+        if (task_plan !== undefined && task_plan !== "") {
+          await query(queryIfPlan, planValues);
+        } */
+
+        // Update task_description if provided and in valid state
+        if (
+          task_description !== undefined &&
+          task_description !== "" &&
+          (currentTaskState === "open" || currentTaskState === "done")
+        ) {
+          await query(queryIfDescription, descriptionValues);
+        }
+
+        // Update task_plan if provided and in valid state
+        if (
+          task_plan !== undefined &&
+          task_plan !== "" &&
+          (currentTaskState === "open" || currentTaskState === "done")
+        ) {
+          await query(queryIfPlan, planValues);
+        }
+
+        // Update task_state
+        await query(querySetState, stateValues);
+
+        if (notes !== undefined && notes !== "") {
+          // Insert into task_note
+          await query(queryTaskNotes, taskNoteValues);
+        }
+
+        // Insert into task_note system message
+        await query(queryTaskNotes, taskSystemNoteValues);
+
+        // Send email notification
+        if (task_state === "done") {
+          const queryGetGroupName = `SELECT app_permit_done FROM application WHERE app_acronym = ?`;
+          const results = await query(queryGetGroupName, [task_app_Acronym]);
+          const groupname = results[0]?.app_permit_done;
+
+          if (groupname) {
+            const subject = `Task ${task_name} Done`;
+            const text = `Task Name: ${task_name} has been completed. Please Review.`;
+            //console.log(subject);
+            //console.log(text);
+
+            const emails = await getUserEmailsByGroupName(groupname);
+
+            //console.log(emails);
+            await sendEmail(emails, subject, text);
+          }
+        }
+
+        // Commit transaction
+        connection.commit((err) => {
+          if (err) {
+            console.error("Error committing transaction:", err);
+            return connection.rollback(() => {
+              res.status(500).send("Error committing transaction");
+            });
+          }
+
+          res.send("Task updated and note added successfully");
+        });
+      } else {
+        // Rollback transaction if transition is invalid
+        connection.rollback(() => {
+          res.status(400).send("Invalid task state transition");
+        });
+      }
     } catch (error) {
       // Rollback transaction on error
       console.error("Error processing transaction:", error);
@@ -1202,20 +1401,29 @@ async function rejectTaskWithStateChange(req, res) {
   });
 }
 
-async function getUserEmailsByGroupName(groupname) {
-  const sql = `
-    SELECT u.email
-    FROM usergroup ug
-    JOIN user u ON ug.userID = u.username
-    WHERE ug.groupname = ?;
-  `;
-
+async function groupnametest(req, res) {
   try {
-    const [results] = await query(sql, [groupname]);
-    return results.map((user) => user.email); // Return an array of email addresses
+    const app_acronym = req.body.app_acronym;
+
+    if (!app_acronym) {
+      return res.status(400).send("app_acronym is required");
+    }
+
+    const queryGetGroupName =
+      "SELECT app_permit_done FROM application WHERE app_acronym = ?";
+
+    // Execute the query
+    const results = await query(queryGetGroupName, [app_acronym]);
+
+    console.log(results[0].app_permit_done);
+    // Extract the desired data
+    const groupname = results[0].app_permit_done; // Assuming 'app_permit_done' is the correct field name
+
+    // Send the result
+    res.status(200).json({ groupname });
   } catch (error) {
-    console.error("Error fetching user emails:", error);
-    throw error;
+    console.error("Unexpected error:", error);
+    res.status(500).send("Unexpected error");
   }
 }
 
@@ -1242,4 +1450,5 @@ module.exports = {
   updateTaskWithStateChange,
   updateTaskNoStateChange,
   rejectTaskWithStateChange,
+  groupnametest,
 };

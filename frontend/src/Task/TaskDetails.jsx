@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useContext } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useContext } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { UserContext } from "../login/UserContext";
 import Navbar from "../util/Navbar";
 
 const TaskDetailsPage = () => {
-  const { applicationName, taskId } = useParams();
+  //const { applicationName, taskId } = useParams();
   const { state } = useContext(UserContext);
   const navigate = useNavigate();
   const location = useLocation();
@@ -15,8 +15,14 @@ const TaskDetailsPage = () => {
   const [planOptions, setPlanOptions] = useState([]);
   const [auditTrail, setAuditTrail] = useState([]);
 
-  const { canEditOpen, canEditToDo, canEditDoing, canEditDone } =
-    location.state || {};
+  const {
+    applicationName,
+    taskId,
+    canEditOpen,
+    canEditToDo,
+    canEditDoing,
+    canEditDone,
+  } = location.state || {};
 
   const canEditDescription =
     (task.task_state === "open" || task.task_state === "done") &&
@@ -32,8 +38,7 @@ const TaskDetailsPage = () => {
     (task.task_state === "doing" && canEditDoing) ||
     (task.task_state === "done" && canEditDone);
 
-  // Fetch task details, plan options, and audit trail
-  const fetchTaskDetails = async () => {
+  const fetchTaskDetails = useCallback(async () => {
     if (state.loading) return;
     try {
       // Fetch task details
@@ -65,11 +70,11 @@ const TaskDetailsPage = () => {
     } catch (error) {
       console.error("Error fetching task details:", error);
     }
-  };
+  }, [applicationName, taskId, state.user, state.loading]);
 
   useEffect(() => {
     fetchTaskDetails();
-  }, [applicationName, taskId, state.user, state.loading]);
+  }, [fetchTaskDetails, state.user, state.loading]);
 
   const handleBack = () => {
     navigate(-1); // Go back to the previous page
@@ -157,9 +162,11 @@ const TaskDetailsPage = () => {
           task_state: newState,
           task_owner: state.user,
           notes: newNote,
+          task_name: task.task_name,
         },
         { withCredentials: true }
       );
+
       setNewNote("");
       fetchTaskDetails(); // Refresh data after release
     } catch (error) {
@@ -254,19 +261,21 @@ const TaskDetailsPage = () => {
       >
         &lt;- Back
       </button>
-      <h1 className="text-3xl font-bold mb-4">Task Details</h1>
+      <h1 className="text-3xl font-bold mb-4">Task Details {task.task_name}</h1>
       <div className="grid grid-cols-2 gap-4">
         {/* Task Details */}
         <div>
           <div className="mb-4">
             <label className="block font-bold">Description:</label>
-            {canEditDescription ? (
+            {(canEditDescription && canEditOpen) ||
+            (canEditDescription && canEditDone) ? (
               <textarea
                 value={task.task_description || ""}
                 onChange={(e) =>
                   setTask({ ...task, task_description: e.target.value })
                 }
                 className="w-full border rounded p-2"
+                disabled={!canEditDescription}
               />
             ) : (
               <p className="border rounded p-2">
@@ -306,13 +315,14 @@ const TaskDetailsPage = () => {
 
           <div className="mb-4">
             <label className="block font-bold">Plan:</label>
-            {canEditPlan ? (
+            {(canEditPlan && canEditOpen) || (canEditPlan && canEditDone) ? (
               <select
                 value={task.task_plan || ""}
                 onChange={(e) =>
                   setTask({ ...task, task_plan: e.target.value })
                 }
                 className="w-full border rounded p-2"
+                disabled={!canEditPlan}
               >
                 <option value="">Select Plan</option>
                 {planOptions.map((plan) => (
