@@ -215,7 +215,13 @@ const TaskManagementPage = () => {
 
         <div className="flex">
           <div className="font-bold w-32">Description:</div>
-          <div>{task.task_description || ""}</div>
+          <div>
+            {task.task_description
+              ? task.task_description.length > 20
+                ? `${task.task_description.substring(0, 20)}...`
+                : task.task_description
+              : ""}
+          </div>
         </div>
 
         <div className="flex">

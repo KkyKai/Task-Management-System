@@ -14,6 +14,7 @@ const TaskDetailsPage = () => {
   const [newNote, setNewNote] = useState("");
   const [planOptions, setPlanOptions] = useState([]);
   const [auditTrail, setAuditTrail] = useState([]);
+  const [requestExtension, setRequestExtension] = useState(false);
 
   const {
     applicationName,
@@ -169,6 +170,7 @@ const TaskDetailsPage = () => {
 
       setNewNote("");
       fetchTaskDetails(); // Refresh data after release
+      navigate(-1);
     } catch (error) {
       console.error("Error releasing task:", error);
     }
@@ -220,13 +222,25 @@ const TaskDetailsPage = () => {
       );
       setNewNote("");
       fetchTaskDetails(); // Refresh data after release
+      navigate(-1);
     } catch (error) {
       console.error("Error releasing task:", error);
     }
   };
 
+  useEffect(() => {
+    if (requestExtension) {
+      setNewNote("Requesting for Time Extension. \n");
+    } else {
+      setNewNote(task.task_notes || "");
+    }
+  }, [requestExtension, task.task_notes]);
+
   // Determine the action button text based on task state
   const getActionButtonText = () => {
+    if (requestExtension) {
+      return "Request for Time Extension";
+    }
     switch (task.task_state) {
       case "open":
         return "Release Task";
@@ -261,14 +275,19 @@ const TaskDetailsPage = () => {
       >
         &lt;- Back
       </button>
-      <h1 className="text-3xl font-bold mb-4">Task Details {task.task_name}</h1>
+      <h1 className="text-3xl font-bold mb-4">Task Name: {task.task_name}</h1>
+
       <div className="grid grid-cols-2 gap-4">
         {/* Task Details */}
         <div>
           <div className="mb-4">
             <label className="block font-bold">Description:</label>
-            {(canEditDescription && canEditOpen) ||
-            (canEditDescription && canEditDone) ? (
+            {(canEditDescription &&
+              canEditOpen &&
+              task.task_state === "open") ||
+            (canEditDescription &&
+              canEditDone &&
+              task.task_state === "done") ? (
               <textarea
                 value={task.task_description || ""}
                 onChange={(e) =>
@@ -315,7 +334,8 @@ const TaskDetailsPage = () => {
 
           <div className="mb-4">
             <label className="block font-bold">Plan:</label>
-            {(canEditPlan && canEditOpen) || (canEditPlan && canEditDone) ? (
+            {(canEditPlan && canEditOpen && task.task_state === "open") ||
+            (canEditPlan && canEditDone && task.task_state === "done") ? (
               <select
                 value={task.task_plan || ""}
                 onChange={(e) =>
@@ -362,6 +382,21 @@ const TaskDetailsPage = () => {
               )}
             </div>
 
+            {task.task_state === "doing" && canEditDoing && (
+              <div className="flex items-center mb-4">
+                <input
+                  type="checkbox"
+                  id="request-extension"
+                  checked={requestExtension}
+                  onChange={(e) => setRequestExtension(e.target.checked)}
+                  className="mr-2"
+                />
+                <label htmlFor="request-extension" className="font-bold">
+                  Request Time Extension
+                </label>
+              </div>
+            )}
+
             {canAddNote && (
               <>
                 <div className="mb-4">
@@ -380,22 +415,25 @@ const TaskDetailsPage = () => {
                   >
                     Cancel
                   </button>
+                  {!requestExtension && (
+                    <>
+                      <button
+                        className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-600 mr-2"
+                        onClick={handleUpdateDetails}
+                      >
+                        Update Details
+                      </button>
 
-                  <button
-                    className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-600 mr-2"
-                    onClick={handleUpdateDetails}
-                  >
-                    Update Details
-                  </button>
-
-                  {(task.task_state === "doing" ||
-                    task.task_state === "done") && (
-                    <button
-                      className="bg-red-500 text-white px-4 py-2 rounded shadow-lg hover:bg-red-600 mr-2"
-                      onClick={handleGiveUpTask}
-                    >
-                      {getRejectButtonText()}
-                    </button>
+                      {(task.task_state === "doing" ||
+                        task.task_state === "done") && (
+                        <button
+                          className="bg-red-500 text-white px-4 py-2 rounded shadow-lg hover:bg-red-600 mr-2"
+                          onClick={handleGiveUpTask}
+                        >
+                          {getRejectButtonText()}
+                        </button>
+                      )}
+                    </>
                   )}
 
                   <button
