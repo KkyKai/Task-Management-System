@@ -113,7 +113,7 @@ const CreateApplication = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white shadow-md rounded-lg">
+    <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
       <Navbar />
       <button
         className="text-blue-500 underline mb-4"
@@ -133,7 +133,7 @@ const CreateApplication = () => {
         <div className="mb-4 p-4 bg-red-200 text-red-800 rounded">{error}</div>
       )}
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-x-12 gap-y-6 sm:grid-cols-2">
           {/* Column 1: General Information */}
           <div className="space-y-6">
             <div>
@@ -148,7 +148,7 @@ const CreateApplication = () => {
             <div>
               <label className="block text-gray-700">Description:</label>
               <textarea
-                className="w-full p-2 border border-gray-300 rounded"
+                className="w-full h-32 p-2 border border-gray-300 rounded"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />

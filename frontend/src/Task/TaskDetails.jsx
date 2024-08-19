@@ -15,6 +15,7 @@ const TaskDetailsPage = () => {
   const [planOptions, setPlanOptions] = useState([]);
   const [auditTrail, setAuditTrail] = useState([]);
   const [requestExtension, setRequestExtension] = useState(false);
+  const [planChanged, setPlanChanged] = useState(false);
 
   const {
     applicationName,
@@ -24,6 +25,23 @@ const TaskDetailsPage = () => {
     canEditDoing,
     canEditDone,
   } = location.state || {};
+
+  const formatForDisplay = (text) => {
+    return text
+      ? text.split("\n").map((line, index) => (
+          <React.Fragment key={index}>
+            {line}
+            <br />
+          </React.Fragment>
+        ))
+      : null;
+  };
+
+  // Update the planChanged state when plan is changed
+  const handlePlanChange = (e) => {
+    setTask({ ...task, task_plan: e.target.value });
+    setPlanChanged(true);
+  };
 
   const canEditDescription =
     (task.task_state === "open" || task.task_state === "done") &&
@@ -113,6 +131,9 @@ const TaskDetailsPage = () => {
       );
       setNewNote("");
       fetchTaskDetails(); // Refresh data after update
+      setPlanChanged(false);
+
+      console.log("New Note:", newNote);
     } catch (error) {
       console.error("Error updating task details:", error);
     }
@@ -229,6 +250,7 @@ const TaskDetailsPage = () => {
   };
 
   useEffect(() => {
+    console.log("Task Notes:", task.task_notes);
     if (requestExtension) {
       setNewNote("Requesting for Time Extension. \n");
     } else {
@@ -241,6 +263,11 @@ const TaskDetailsPage = () => {
     if (requestExtension) {
       return "Request for Time Extension";
     }
+
+    /*if (task.task_state === "done" && planChanged) {
+      return ""; // Do not show any button text if plan has changed and state is done
+    } */
+
     switch (task.task_state) {
       case "open":
         return "Release Task";
@@ -338,9 +365,7 @@ const TaskDetailsPage = () => {
             (canEditPlan && canEditDone && task.task_state === "done") ? (
               <select
                 value={task.task_plan || ""}
-                onChange={(e) =>
-                  setTask({ ...task, task_plan: e.target.value })
-                }
+                onChange={handlePlanChange}
                 className="w-full border rounded p-2"
                 disabled={!canEditPlan}
               >
@@ -363,14 +388,14 @@ const TaskDetailsPage = () => {
         <div>
           <div className="mb-4">
             <label className="block font-bold">Notes:</label>
-            <div className="h-48 overflow-y-auto border p-2 mb-4">
-              <p>{task.task_notes}</p>
+            <div className="h-96 overflow-y-auto border rounded p-2 mb-4 resize-y">
+              <p>{formatForDisplay(task.task_notes)}</p>
               {auditTrail.length > 0 && (
                 <div className="mt-4">
                   <ul>
                     {auditTrail.map((entry, index) => (
                       <li key={index} className="mb-2 border-b border-gray-200">
-                        <p>{entry.notes}</p>
+                        <p>{formatForDisplay(entry.notes)}</p>
                         <p className="text-gray-600 text-sm">
                           Created At:{" "}
                           {new Date(entry.tasknote_created).toLocaleString()}
@@ -417,12 +442,14 @@ const TaskDetailsPage = () => {
                   </button>
                   {!requestExtension && (
                     <>
-                      <button
-                        className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-600 mr-2"
-                        onClick={handleUpdateDetails}
-                      >
-                        Update Details
-                      </button>
+                      {!(task.task_state === "done" && planChanged) && (
+                        <button
+                          className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-600 mr-2"
+                          onClick={handleUpdateDetails}
+                        >
+                          Update Details
+                        </button>
+                      )}
 
                       {(task.task_state === "doing" ||
                         task.task_state === "done") && (
@@ -436,12 +463,14 @@ const TaskDetailsPage = () => {
                     </>
                   )}
 
-                  <button
-                    className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-green-600"
-                    onClick={handleReleaseTask}
-                  >
-                    {getActionButtonText()}
-                  </button>
+                  {!(task.task_state === "done" && planChanged) && (
+                    <button
+                      className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-green-600"
+                      onClick={handleReleaseTask}
+                    >
+                      {getActionButtonText()}
+                    </button>
+                  )}
                 </div>
               </>
             )}

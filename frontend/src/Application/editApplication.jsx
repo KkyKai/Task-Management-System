@@ -114,7 +114,7 @@ const EditApplication = () => {
       setSuccessMessage("Application edited successfully!");
 
       // Redirect to /landing on successful edit
-      //navigate("/landing");
+      navigate("/landing");
     } catch (error) {
       if (error.response && error.response.data) {
         setError(error.response.data); // Capture and display the backend error message
@@ -126,7 +126,7 @@ const EditApplication = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white shadow-md rounded-lg">
+    <div className="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg">
       <Navbar />
       <button
         className="text-blue-500 underline mb-4"
@@ -144,7 +144,7 @@ const EditApplication = () => {
         <div className="mb-4 p-4 bg-red-200 text-red-800 rounded">{error}</div>
       )}
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-x-12 gap-y-6 sm:grid-cols-2">
           <div className="space-y-6">
             <div>
               <label className="block text-gray-700">Acronym:</label>
@@ -158,7 +158,7 @@ const EditApplication = () => {
             <div>
               <label className="block text-gray-700">Description:</label>
               <textarea
-                className="w-full p-2 border border-gray-300 rounded"
+                className="w-full h-32 p-2 border border-gray-300 rounded"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />

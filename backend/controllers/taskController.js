@@ -95,6 +95,15 @@ async function createApplication(req, res) {
     return res.status(400).send("App Rnumber must be a non-negative number");
   }
 
+  const MAX_DESCRIPTION_LENGTH = 500; // Set to match VARCHAR(500) in the database
+  if (app_description && app_description.length > MAX_DESCRIPTION_LENGTH) {
+    return res
+      .status(400)
+      .send(
+        `App Description length must be at most ${MAX_DESCRIPTION_LENGTH} characters`
+      );
+  }
+
   if (!app_startdate) {
     return res.status(400).send("App Start Date is required");
   }
@@ -1245,6 +1254,8 @@ async function updateTaskWithStateChange(req, res) {
 
 async function updateTaskNoStateChange(req, res) {
   const { task_id, task_description, task_plan, notes } = req.body;
+
+  console.log(notes);
 
   //const currentDateTime = new Date().toISOString();
 
